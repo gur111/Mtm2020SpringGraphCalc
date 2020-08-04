@@ -18,11 +18,20 @@ set<T> operator+(const set<T>& a, const set<T>& b) {
     new_set.insert(b.cbegin(), b.cend());
     return new_set;
 }
+
 template <class T>
 set<T> operator-(const set<T>& a, const set<T>& b) {
     set<T> new_set;
     std::set_difference(a.cbegin(), a.cend(), b.cbegin(), b.cend(),
                         std::inserter(new_set, new_set.end()));
+    return new_set;
+}
+
+template <class T>
+set<T> operator^(const set<T>& a, const set<T>& b) {
+    set<T> new_set;
+    std::set_intersection(a.cbegin(), a.cend(), b.cbegin(), b.cend(),
+                          std::inserter(new_set, new_set.end()));
     return new_set;
 }
 
@@ -95,7 +104,22 @@ Graph Graph::operator*(const Graph& other) const {
     return Graph(nnodes, nedges);
 }
 
-Graph Graph::operator^(const Graph& other) const {}
+Graph Graph::operator^(const Graph& other) const {
+    map<string, set<string>> new_edges;
+    for (auto edge : this->edges) {
+        // Check if the src_node is in the `other` graph
+        if (other.edges.find(edge.first) != other.edges.cend()) {
+            // Remove edges to nodes in the `other` graph
+            set<string> dst_nodes =
+                edge.second ^ other.edges.find(edge.first)->second;
+            if (dst_nodes.size() > 0) {
+                new_edges[edge.first] = dst_nodes;
+            }
+        }
+    }
+
+    return Graph(this->nodes ^ other.nodes, new_edges);
+}
 
 bool Graph::operator==(const Graph& other) const {
     return (this->nodes == other.nodes and this->edges == other.edges);
@@ -110,7 +134,7 @@ Graph Graph::operator!() const {
         set<string> dst_nodes = this->nodes;
         // If the node has edge in the original graph
         if (this->edges.find(node) != this->edges.cend()) {
-            dst_nodes = dst_nodes - (this->edges.find(node))->second;
+            dst_nodes = dst_nodes - this->edges.find(node)->second;
         }
         if (dst_nodes.size() > 0) {
             new_edges[node] = dst_nodes;
