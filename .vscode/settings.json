@@ -1,0 +1,5 @@
+{
+    "cmake.sourceDirectory": "${workspaceFolder}/unittests",
+    "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+    "testMate.cpp.test.parallelExecutionLimit": 1
+}
