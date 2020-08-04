@@ -21,8 +21,8 @@ class Graph {
     Graph operator-(const Graph& other) const;
     Graph operator*(const Graph& other) const;
     Graph operator^(const Graph& other) const;
-    Graph operator==(const Graph& other) const;
-    Graph operator!=(const Graph& other) const;
+    bool operator==(const Graph& other) const;
+    bool operator!=(const Graph& other) const;
     Graph operator!() const;
 
     static std::string pair_nodes(const std::string& a, const std::string& b);

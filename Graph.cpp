@@ -97,13 +97,11 @@ Graph Graph::operator*(const Graph& other) const {
 
 Graph Graph::operator^(const Graph& other) const {}
 
-Graph Graph::operator==(const Graph& other) const {
+bool Graph::operator==(const Graph& other) const {
     return (this->nodes == other.nodes and this->edges == other.edges);
 }
 
-Graph Graph::operator!=(const Graph& other) const {
-    return not(*this == other);
-}
+bool Graph::operator!=(const Graph& other) const { return not(*this == other); }
 
 Graph Graph::operator!() const {
     map<string, set<string>> new_edges;
