@@ -1,5 +1,6 @@
 #ifndef BINTREE_H
 #define BINTREE_H
+#include <iostream>
 #include <memory>
 #include <string>
 
@@ -64,12 +65,19 @@ class BinTree {
      */
     void removeRight();
     /**
+     * Streams string output to the given ostream
+     */
+    static void print2DUtil(std::ostream &os, const shared_ptr<BinTree> root,
+                            int space);
+    /**
      * Compare two trees to make sure they contain the same values
      */
     bool operator==(const BinTree &other) const;
     bool operator!=(const BinTree &other) const;
+    bool isLeaf() const;
     void cleanup();
 };
+std::ostream &operator<<(std::ostream &os, const shared_ptr<BinTree> tree);
 }  // namespace GraphCalc
 
 #endif

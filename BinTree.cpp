@@ -1,6 +1,9 @@
 #include "BinTree.h"
 
-#include <iostream>
+#define TREE_PRINT_SPREAD 10
+using std::cout;
+using std::endl;
+using std::ostream;
 
 namespace GraphCalc {
 BinTree::BinTree(string value) : left(nullptr), right(nullptr), value(value) {}
@@ -61,6 +64,7 @@ bool BinTree::operator==(const BinTree &other) const {
 bool BinTree::operator!=(const BinTree &other) const {
     return not(*this == other);
 }
+bool BinTree::isLeaf() const { return (left or right); }
 
 void GraphCalc::BinTree::cleanup() {
     if (left) {
@@ -78,9 +82,9 @@ void GraphCalc::BinTree::cleanup() {
             side = left;
         } else {
             if (left == nullptr and right == nullptr) {
-                std::cout << "ERROR: leaf contains an empty value" << std::endl;
+                std::cout << "Error: leaf contains an empty value" << std::endl;
             } else {
-                std::cout << "ERROR: Expected operator between operands"
+                std::cout << "Error: Expected operator between operands"
                           << std::endl;
             }
             return;
@@ -89,6 +93,35 @@ void GraphCalc::BinTree::cleanup() {
         left = side->left;
         right = side->right;
     }
+}
+
+// Function to print binary tree in 2D
+// It does reverse inorder traversal
+void BinTree::print2DUtil(ostream &os, const shared_ptr<BinTree> root,
+                          int space) {
+    // Base case
+    if (root == nullptr) return;
+
+    // Increase distance between levels
+    space += TREE_PRINT_SPREAD;
+
+    // Process right child first
+    print2DUtil(os, root->right, space);
+
+    // Print current node after space
+    // count
+    cout << endl;
+    for (int i = TREE_PRINT_SPREAD; i < space; i++) cout << " ";
+    cout << root->value << endl;
+
+    // Process left child
+    print2DUtil(os, root->left, space);
+}
+
+ostream &operator<<(ostream &os, const shared_ptr<BinTree> tree) {
+    BinTree::print2DUtil(os, tree, 0);
+    os << "\n" << endl;
+    return os;
 }
 
 }  // namespace GraphCalc
