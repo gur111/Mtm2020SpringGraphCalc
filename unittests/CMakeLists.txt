@@ -5,6 +5,11 @@ set(CMAKE_CXX_STANDARD 11)
 enable_testing()
 find_package(GTest REQUIRED)
 
-add_executable(ParserUnitTests ParserTests.cpp ../Parser.cpp ../BinTree.cpp ../Graph.cpp)
+add_executable(UnitTests TestRunner.cpp GraphTests.cpp ParserTests.cpp
+                ../Parser.cpp
+                ../BinTree.cpp
+                ../Graph.cpp
+                ../TreeRunner.cpp
+                ../StorageManager.cpp)
 
-target_link_libraries(ParserUnitTests ${GTEST_LIBRARIES} pthread)
+target_link_libraries(UnitTests ${GTEST_LIBRARIES} pthread)
