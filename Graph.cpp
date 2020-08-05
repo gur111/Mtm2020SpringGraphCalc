@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <iostream>
 #include <iterator>
+#include <regex>
 
 using std::cout;
 using std::endl;
@@ -11,6 +12,51 @@ using std::set;
 using std::string;
 
 namespace GraphCalc {
+
+Graph::Graph(std::string literal) {
+    std::smatch matches;
+    string name_prefix = "\\s*([A-z\\[])";
+    string name_chars = "[A-z0-9;\\[\\]]";
+    string node_regex = "(" + name_prefix + name_chars + "*)\\s*";
+    string edge_regex = "\\s*<" + node_regex + "," + node_regex + ">\\s*";
+    // std::regex regexp("\\{(" + node_regex + ",)*" + node_regex + "\\|" +
+    //                   edge_regex + "(," + edge_regex + ")*\\}");
+
+    int delim_pos = literal.find("|");
+    string nodes_literal;
+    string edges_literal;
+    if (delim_pos == string::npos) {
+        nodes_literal = literal.substr(1, delim_pos - 1);
+        edges_literal = 
+    } else {
+        nodes_literal = literal.substr(1, literal.length() - 2);
+    }
+    int next_delim_pos;
+    delim_pos = 0;
+    while ((next_delim_pos = nodes_literal.substr(delim_pos).find(",")) !=
+           string::npos) {
+        nodes.insert(nodes_literal.substr(delim_pos, next_delim_pos));
+        delim_pos += next_delim_pos + 1;
+    }
+    nodes.insert(nodes_literal.substr(delim_pos));
+}
+
+Graph::Graph(const set<string>& nodes, const map<string, set<string>>& edges)
+    : nodes(nodes), edges(edges) {
+    for (auto node : edges) {
+        if (nodes.find(node.first) == nodes.cend()) {
+            // TODO: Throw exception
+            cout << "Error: node " << node.first << " is not declared" << endl;
+        }
+        for (auto dst_node : node.second) {
+            if (nodes.find(dst_node) == nodes.cend()) {
+                // TODO: Throw exception
+                cout << "Error: node " << dst_node << " is not declared"
+                     << endl;
+            }
+        }
+    }
+}
 
 template <class T>
 set<T> operator+(const set<T>& a, const set<T>& b) {
@@ -37,23 +83,6 @@ set<T> operator^(const set<T>& a, const set<T>& b) {
 
 string Graph::pair_nodes(const string& a, const string& b) {
     return "[" + a + ";" + b + "]";
-}
-
-Graph::Graph(const set<string>& nodes, const map<string, set<string>>& edges)
-    : nodes(nodes), edges(edges) {
-    for (auto node : edges) {
-        if (nodes.find(node.first) == nodes.cend()) {
-            // TODO: Throw exception
-            cout << "Error: node " << node.first << " is not declared" << endl;
-        }
-        for (auto dst_node : node.second) {
-            if (nodes.find(dst_node) == nodes.cend()) {
-                // TODO: Throw exception
-                cout << "Error: node " << dst_node << " is not declared"
-                     << endl;
-            }
-        }
-    }
 }
 
 Graph Graph::operator+(const Graph& other) const {
@@ -142,5 +171,17 @@ Graph Graph::operator!() const {
     }
 
     return Graph(this->nodes, new_edges);
+}
+std::ostream& operator<<(std::ostream& os, const Graph& graph) {
+    for (auto node : graph.nodes) {
+        os << node << endl;
+    }
+    os << "$" << endl;
+    for (auto edge : graph.edges) {
+        for (auto dnode : edge.second) {
+            os << edge.first << " " << dnode << endl;
+        }
+    }
+    return os;
 }
 }  // namespace GraphCalc

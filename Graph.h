@@ -5,7 +5,6 @@
 #include <map>
 #include <set>
 #include <string>
-#include <vector>
 
 namespace GraphCalc {
 class Graph {
@@ -13,6 +12,8 @@ class Graph {
     std::map<std::string, std::set<std::string>> edges;
 
    public:
+    Graph() = default;
+    Graph(std::string literal);
     Graph(const std::set<std::string>& nodes,
           const std::map<std::string, std::set<std::string>>& edges);
     ~Graph() = default;
