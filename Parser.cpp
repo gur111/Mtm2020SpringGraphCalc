@@ -5,8 +5,15 @@
 #include <regex>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
+#include "Constants.h"
+#define pairBO pair<shared_ptr<BinTree>, string>
+
+using std::cout;
+using std::endl;
+using std::pair;
 using std::set;
 using std::vector;
 
@@ -15,13 +22,11 @@ namespace GraphCalc {
 shared_ptr<BinTree> parseLine(const string &line) {
     /* This will parse a line of input with an algorithm based on the
      Shunting-yard algorithm and a parse/syntax tree concept */
-    enum class Stage { DEFAULT, LOAD_ARG_L, LOAD_ARG_R };
-    const set<string> bin_operators = {"+", "-", "*", "^", "="};
-    const set<string> unary_operators = {"!"};
+    enum class Stage { DEFAULT, LOAD_ARG, LOAD_ARG_R };
     shared_ptr<BinTree> tree_root(new BinTree(""));
-    vector<shared_ptr<BinTree>> tree_stack;
+    vector<pairBO> tree_stack;
     shared_ptr<BinTree> curr_tree = tree_root;
-    tree_stack.push_back(curr_tree);
+    tree_stack.push_back(pairBO(curr_tree, ""));
     string token;
     Stage stage = Stage::DEFAULT;
 
@@ -35,40 +40,33 @@ shared_ptr<BinTree> parseLine(const string &line) {
             case Stage::DEFAULT:
                 if (token == "(") {
                     curr_tree->createLeft("");
-                    tree_stack.push_back(curr_tree);
+                    tree_stack.push_back(pairBO(curr_tree, ""));
                     curr_tree = curr_tree->getLeft();
                 } else if (token == ")") {
-                    if (tree_stack.back() == tree_root) {
+                    if (tree_stack.back().first == tree_root) {
                         // TODO: Throw unbalanced expression. Couln't find
                         // matching openning bracket
                     }
-                    curr_tree = tree_stack.back();
+                    curr_tree = tree_stack.back().first;
                     tree_stack.pop_back();
-                    string tmp_token = getNextToken("", true);
-                    // if (curr_tree->get() == "" and
-                    //     bin_operators.find(tmp_token) == bin_operators.end())
-                    //     { curr_tree->set(curr_tree->getLeft()->get());
-                    //     curr_tree->setLeft(curr_tree->getLeft()->getLeft());
-                    //     curr_tree->setRight(curr_tree->getLeft()->getRight());
-                    // }
-                } else if (bin_operators.find(token) != bin_operators.end()) {
+                } else if (BIN_OPERATORS.find(token) != BIN_OPERATORS.end()) {
+                    // Handle binary operators
                     curr_tree->set(token);
                     curr_tree->createRight("");
-                    tree_stack.push_back(curr_tree);
+                    tree_stack.push_back(pairBO(curr_tree, ""));
                     curr_tree = curr_tree->getRight();
-                } else if (unary_operators.find(token) !=
-                           unary_operators.end()) {
-                    curr_tree->set(token);
-                    curr_tree->createLeft("");
-                    tree_stack.push_back(curr_tree);
-                    curr_tree = curr_tree->getLeft();
+                } else if (UNARY_OPERATORS.find(token) !=
+                           UNARY_OPERATORS.end()) {
+                    // Handle unary operators
+                    curr_tree->createLeft("!");
+                    tree_stack.push_back(pairBO(curr_tree, token));
+                    curr_tree = curr_tree->getLeft()->createLeft("");
                 } else if (token == "load") {
                     // Handle inline load
-                    curr_tree->set(token);
-                    curr_tree->createLeft("");
-                    tree_stack.push_back(curr_tree);
-                    curr_tree = curr_tree->getLeft();
-                    stage = Stage::LOAD_ARG_L;
+                    curr_tree->createLeft("load");
+                    tree_stack.push_back(pairBO(curr_tree, token));
+                    curr_tree = curr_tree->getLeft()->createLeft("");
+                    stage = Stage::LOAD_ARG;
                     if ((token = getNextToken()) != "(") {
                         // TODO: Throw syntax error after function call.
                         // Expected
@@ -76,45 +74,30 @@ shared_ptr<BinTree> parseLine(const string &line) {
                     }
                 } else {
                     string tmp_token = getNextToken("", true);
-                    if (tmp_token != "" and
-                        bin_operators.find(tmp_token) != bin_operators.end()) {
+                    if (tmp_token != "" and tree_stack.back().second == "" and
+                        BIN_OPERATORS.find(tmp_token) != BIN_OPERATORS.end()) {
                         curr_tree->set(tmp_token);
                         curr_tree->createLeft(token);
                         curr_tree->createRight("");
-                        tree_stack.push_back(curr_tree);
                         curr_tree = curr_tree->getRight();
                         getNextToken();
                     } else {
                         curr_tree->set(token);
-                        curr_tree = tree_stack.back();
+                        curr_tree = tree_stack.back().first;
                         tree_stack.pop_back();
                     }
-                    // TODO: Unexpected token. Maybe var name?
                 }
                 break;
             // Read left `load` arg
-            case Stage::LOAD_ARG_L:
+            case Stage::LOAD_ARG:
                 // TODO: Verify func left arg. Probably just a var name
                 curr_tree->set(token);
-                curr_tree = tree_stack.back();
-                tree_stack.pop_back();
-                stage = Stage::LOAD_ARG_R;
-                if ((token = getNextToken()) != ",") {
-                    // TODO: Throw syntax error after function arg.
-                    // Expected
-                    // "," got `token`
-                }
-                break;
-            // Read right `load` arg
-            case Stage::LOAD_ARG_R:
-                // TODO: Verify func left arg. Probably just a var name
-                curr_tree->set(token);
-                curr_tree = tree_stack.back();
+                curr_tree = tree_stack.back().first;
                 tree_stack.pop_back();
                 stage = Stage::DEFAULT;
                 if ((token = getNextToken()) != ")") {
-                    // TODO: Throstartposw syntax error after function arg.
-                    // Expected
+                    // TODO: Throstartposw syntax error after function
+                    // arg. Expected
                     // ")" got `token`
                 }
                 break;
@@ -123,12 +106,36 @@ shared_ptr<BinTree> parseLine(const string &line) {
                 break;
         }
     }
-    if (tree_stack.back() != tree_root) {
-        std::cout << "ERROR: Unbalanced at the end" << std::endl;
+    if (tree_stack.back().first != tree_root) {
+        cout << "Error: Unbalanced at the end" << endl;
         // TODO: Throw unbalanced expression. No matching closing bracket
     }
     tree_root->cleanup();
     return tree_root;
+}
+
+bool isNodeNameLegal(const string &name) {
+    // TODO: Implement
+    return true;
+}
+
+string extractGraphLiteralToken(const string &subline) {
+    std::smatch matches;
+    string name_prefix = "\\s*([A-z\\[])";
+    string name_chars = "[A-z0-9;\\[\\]]";
+    string node_regex = "(" + name_prefix + name_chars + "*)\\s*";
+    string edge_regex = "\\s*<" + node_regex + "," + node_regex + ">\\s*";
+    std::regex regexp("^\\{(" + node_regex + ",)*" + node_regex + "(\\|" +
+                      edge_regex + "(," + edge_regex + ")*)?\\}");
+    std::regex_search(subline, matches, regexp);
+    if (matches.size() == 0) {
+        return "";
+    }
+    return matches[0];
+}
+
+void sanitizeGraphLiteralToken(string &token) {
+    token.erase(remove_if(token.begin(), token.end(), isspace), token.end());
 }
 
 string getNextToken(const string &line, bool peak) {
@@ -176,11 +183,17 @@ string getNextToken(const string &line, bool peak) {
 
     // Handle graph literals
     if (cur_line[tmp_pos] == '{') {
-        int startpos = tmp_pos;  // TODO: Temp value
-        // TODO: Sanitize graph literal and read until '}'
-        if (not peak) pos = tmp_pos;
-        return cur_line.substr(
-            startpos, tmp_pos - startpos) /*Return the sanitized token */;
+        int startpos = tmp_pos;
+        string match = extractGraphLiteralToken(cur_line.substr(startpos));
+        if (match == "") {
+            cout << "Error: invalid graph literal format at char: " << tmp_pos
+                 << endl;
+            return "";  // TODO: Throw error
+        }
+        if (not peak) pos = tmp_pos + match.length();
+        sanitizeGraphLiteralToken(match);
+        /*Return the sanitized token */
+        return match;
     }
 
     // Detect func/var name
