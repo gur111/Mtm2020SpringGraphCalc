@@ -53,8 +53,13 @@ TEST_F(BasicGraphTest, PrintFormat) {
     EXPECT_EQ(expected_output, ss.str());
 }
 
-TEST_F(BasicGraphTest, GraphLiteral) {
-    std::cout << Graph("{x1,x2,x3|<x1,x2>}");
+TEST(GraphFromLiteralTest, BasicGraphFromLiteral) {
+    stringstream ss;
+    stringstream expected_ss;
+    ss << Graph({"x1", "x2", "x3"}, {{"x1", {"x2"}}});
+    expected_ss << Graph({"x1", "x2", "x3"}, {{"x1", {"x2"}}});
+    std::cout << Graph({"x1", "x2", "x3"}, {{"x1", {"x2"}}});
+    EXPECT_EQ(expected_ss.str(), ss.str());
 }
 
 }  // namespace GraphCalc

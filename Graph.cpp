@@ -13,32 +13,112 @@ using std::string;
 
 namespace GraphCalc {
 
-Graph::Graph(std::string literal) {
-    std::smatch matches;
-    string name_prefix = "\\s*([A-z\\[])";
-    string name_chars = "[A-z0-9;\\[\\]]";
-    string node_regex = "(" + name_prefix + name_chars + "*)\\s*";
-    string edge_regex = "\\s*<" + node_regex + "," + node_regex + ">\\s*";
-    // std::regex regexp("\\{(" + node_regex + ",)*" + node_regex + "\\|" +
-    //                   edge_regex + "(," + edge_regex + ")*\\}");
+template <class T>
+set<T> operator+(const set<T>& a, const set<T>& b) {
+    set<T> new_set(a);
+    new_set.insert(b.cbegin(), b.cend());
+    return new_set;
+}
 
-    int delim_pos = literal.find("|");
-    string nodes_literal;
-    string edges_literal;
-    if (delim_pos == string::npos) {
-        nodes_literal = literal.substr(1, delim_pos - 1);
-        edges_literal = 
-    } else {
-        nodes_literal = literal.substr(1, literal.length() - 2);
+template <class T>
+set<T>& operator+=(set<T>& a, const set<T>& b) {
+    a.insert(b.cbegin(), b.cend());
+    return a;
+}
+
+template <class T>
+set<T>& operator+=(set<T>& a, const string& str) {
+    a.insert(str);
+    return a;
+}
+
+template <class T>
+set<T> operator-(const set<T>& a, const set<T>& b) {
+    set<T> new_set;
+    std::set_difference(a.cbegin(), a.cend(), b.cbegin(), b.cend(),
+                        std::inserter(new_set, new_set.end()));
+    return new_set;
+}
+
+template <class T>
+set<T> operator^(const set<T>& a, const set<T>& b) {
+    set<T> new_set;
+    std::set_intersection(a.cbegin(), a.cend(), b.cbegin(), b.cend(),
+                          std::inserter(new_set, new_set.end()));
+    return new_set;
+}
+
+void Graph::addNodes(string nodes_literal) {
+    if (nodes_literal == "") {
+        // TODO: Throw exception no nodes found
+        return;
     }
-    int next_delim_pos;
-    delim_pos = 0;
+    int next_delim_pos, delim_pos = 0;
     while ((next_delim_pos = nodes_literal.substr(delim_pos).find(",")) !=
            string::npos) {
         nodes.insert(nodes_literal.substr(delim_pos, next_delim_pos));
         delim_pos += next_delim_pos + 1;
     }
     nodes.insert(nodes_literal.substr(delim_pos));
+}
+
+void Graph::addEdge(string edge_literal) {
+    int nodes_delim;
+    if ((nodes_delim = edge_literal.find(",")) == string::npos) {
+        // TODO: Throw invalid format
+        return;
+    }
+    string first = edge_literal.substr(1, nodes_delim - 1);
+    string second = edge_literal.substr(nodes_delim + 1);
+    second = second.substr(0, second.length() - 1);
+
+    if (nodes.find(first) == nodes.end() or nodes.find(second) == nodes.end()) {
+        // TODO: Throw exception node doesn't exist;
+        return;
+    }
+    edges[first] += second;
+}
+
+void Graph::addEdges(string edges_literal) {
+    // Add edges
+    int next_delim_pos, delim_pos = edges_literal.find("<");
+    if (delim_pos == string::npos) {
+        // TODO: Throw exception invalid format/no edges found
+        return;
+    }
+    string delim = string(">,<");
+    while ((next_delim_pos = edges_literal.substr(delim_pos).find(delim)) !=
+           string::npos) {
+        addEdge(edges_literal.substr(delim_pos, next_delim_pos));
+        delim_pos += next_delim_pos + delim.length();
+    }
+    addEdge(edges_literal.substr(delim_pos));
+}
+
+Graph::Graph(std::string literal) {
+    std::smatch matches;
+    string name_prefix = "\\s*([A-z\\[])";
+    string name_chars = "[A-z0-9;\\[\\]]";
+    string node_regex = "(" + name_prefix + name_chars + "*)\\s*";
+    string edge_regex = "\\s*<" + node_regex + "," + node_regex + ">\\s*";
+
+    int delim_pos = literal.find("|");
+    string nodes_literal;
+    string edges_literal;
+    // Split string into the edges and nodes parts
+    if (delim_pos == string::npos) {
+        nodes_literal = literal.substr(1, literal.length() - 2);
+    } else {
+        nodes_literal = literal.substr(1, delim_pos - 1);
+        edges_literal =
+            literal.substr(delim_pos + 1, literal.length() - 2 - delim_pos);
+    }
+    if (nodes_literal.length() != 0) {
+        addNodes(nodes_literal);
+    }
+    if (edges_literal.length() != 0) {
+        addEdges(edges_literal);
+    }
 }
 
 Graph::Graph(const set<string>& nodes, const map<string, set<string>>& edges)
@@ -58,30 +138,7 @@ Graph::Graph(const set<string>& nodes, const map<string, set<string>>& edges)
     }
 }
 
-template <class T>
-set<T> operator+(const set<T>& a, const set<T>& b) {
-    set<T> new_set(a);
-    new_set.insert(b.cbegin(), b.cend());
-    return new_set;
-}
-
-template <class T>
-set<T> operator-(const set<T>& a, const set<T>& b) {
-    set<T> new_set;
-    std::set_difference(a.cbegin(), a.cend(), b.cbegin(), b.cend(),
-                        std::inserter(new_set, new_set.end()));
-    return new_set;
-}
-
-template <class T>
-set<T> operator^(const set<T>& a, const set<T>& b) {
-    set<T> new_set;
-    std::set_intersection(a.cbegin(), a.cend(), b.cbegin(), b.cend(),
-                          std::inserter(new_set, new_set.end()));
-    return new_set;
-}
-
-string Graph::pair_nodes(const string& a, const string& b) {
+string Graph::pairNodes(const string& a, const string& b) {
     return "[" + a + ";" + b + "]";
 }
 
@@ -115,7 +172,7 @@ Graph Graph::operator*(const Graph& other) const {
     set<string> nnodes;
     for (auto snode : this->nodes) {
         for (auto onode : this->nodes) {
-            nnodes.insert(pair_nodes(snode, onode));
+            nnodes.insert(pairNodes(snode, onode));
         }
     }
 
@@ -123,8 +180,8 @@ Graph Graph::operator*(const Graph& other) const {
         for (auto s_dst_node : sedge.second) {
             for (auto oedge : this->edges) {
                 for (auto o_dst_node : oedge.second) {
-                    nedges[pair_nodes(sedge.first, oedge.first)].insert(
-                        pair_nodes(s_dst_node, o_dst_node));
+                    nedges[pairNodes(sedge.first, oedge.first)].insert(
+                        pairNodes(s_dst_node, o_dst_node));
                 }
             }
         }
