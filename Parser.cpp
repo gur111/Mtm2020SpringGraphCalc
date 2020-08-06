@@ -2,19 +2,21 @@
 
 #include <cctype>
 #include <iostream>
-#include <regex>
 #include <set>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "Constants.h"
+#include "Utils.h"
 #define pairBO pair<shared_ptr<BinTree>, string>
 
 using std::cout;
 using std::endl;
 using std::pair;
 using std::set;
+using std::shared_ptr;
+using std::string;
 using std::vector;
 
 namespace GraphCalc {
@@ -31,7 +33,36 @@ shared_ptr<BinTree> parseLine(const string &line) {
     Stage stage = Stage::DEFAULT;
 
     // TODO: Handle function calls which aren't `load`
-    token = getNextToken(line);
+    getNextToken(line);
+
+    string tmp_token = getNextToken("", true);
+
+    if (tmp_token == "print") {
+        curr_tree->set(tmp_token);
+        tree_stack.push_back(
+            pairBO((curr_tree = curr_tree->createLeft("")), ""));
+        getNextToken(extractFuncParams(line));
+    } else if (tmp_token == "delete") {
+        curr_tree->set(tmp_token);
+        tmp_token = extractFuncParams(line);
+        curr_tree->createLeft(tmp_token);
+        getNextToken(tmp_token);
+        getNextToken();  // Discard first token (we already have it)
+        // Make sure only one parameter
+        if (getNextToken() != "") {
+            // TODO: Throw exception: Token after who
+        }
+        return tree_root;
+    } else if (tmp_token == "who" or tmp_token == "quit" or
+               tmp_token == "reset") {
+        // Now read it for realsies
+        curr_tree->set(getNextToken());
+        // Make sure no more tokens
+        if (getNextToken() != "") {
+            // TODO: Throw exception: Token after who
+        }
+        return tree_root;
+    }
 
     // Handle mutable expression
     while ((token = getNextToken()) != "") {
@@ -117,25 +148,6 @@ shared_ptr<BinTree> parseLine(const string &line) {
 bool isNodeNameLegal(const string &name) {
     // TODO: Implement
     return true;
-}
-
-string extractGraphLiteralToken(const string &subline) {
-    std::smatch matches;
-    string name_prefix = "\\s*([A-z\\[])";
-    string name_chars = "[A-z0-9;\\[\\]]";
-    string node_regex = "(" + name_prefix + name_chars + "*)\\s*";
-    string edge_regex = "\\s*<" + node_regex + "," + node_regex + ">\\s*";
-    std::regex regexp("^\\{(" + node_regex + ",)*" + node_regex + "(\\|" +
-                      edge_regex + "(," + edge_regex + ")*)?\\}");
-    std::regex_search(subline, matches, regexp);
-    if (matches.size() == 0) {
-        return "";
-    }
-    return matches[0];
-}
-
-void sanitizeGraphLiteralToken(string &token) {
-    token.erase(remove_if(token.begin(), token.end(), isspace), token.end());
 }
 
 string getNextToken(const string &line, bool peak) {

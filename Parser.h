@@ -6,8 +6,8 @@
 
 namespace GraphCalc {
 
-string getNextToken(const string &line = "", bool peak = false);
-shared_ptr<BinTree> parseLine(const string &line);
+std::string getNextToken(const std::string &line = "", bool peak = false);
+std::shared_ptr<BinTree> parseLine(const std::string &line);
 }  // namespace GraphCalc
 
 #endif
