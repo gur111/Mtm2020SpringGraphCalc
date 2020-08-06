@@ -20,7 +20,7 @@ struct BasicGraphTest : testing::Test {
     Graph graph;
     string expected_output;
 
-    static map<string, set<string>> get_default_edges() {
+    static map<string, set<string>> getDefaultEdges() {
         map<string, set<string>> edges;
         edges["x2"] = {"x1", "x4", "x3"};
         edges["x1"] = {"x4", "x3"};
@@ -30,7 +30,7 @@ struct BasicGraphTest : testing::Test {
     }
 
     BasicGraphTest(set<string> nodes = {"x2", "x4", "x3", "x1"},
-                   map<string, set<string>> edges = get_default_edges())
+                   map<string, set<string>> edges = getDefaultEdges())
         : nodes(nodes), edges(edges), graph(Graph(nodes, edges)) {
         for (auto node : nodes) {
             expected_output += node + "\n";
@@ -58,7 +58,6 @@ TEST(GraphFromLiteralTest, BasicGraphFromLiteral) {
     stringstream expected_ss;
     ss << Graph({"x1", "x2", "x3"}, {{"x1", {"x2"}}});
     expected_ss << Graph({"x1", "x2", "x3"}, {{"x1", {"x2"}}});
-    std::cout << Graph({"x1", "x2", "x3"}, {{"x1", {"x2"}}});
     EXPECT_EQ(expected_ss.str(), ss.str());
 }
 
