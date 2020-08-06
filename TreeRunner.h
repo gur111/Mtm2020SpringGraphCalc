@@ -8,7 +8,8 @@
 #include "StorageManager.h"
 
 namespace GraphCalc {
-shared_ptr<Graph> executeTree(StorageManager storage, shared_ptr<BinTree> tree);
+std::shared_ptr<Graph> executeTree(StorageManager &storage,
+                                   std::shared_ptr<BinTree> tree);
 
 }
 
