@@ -4,6 +4,8 @@
 using std::cout;
 using std::endl;
 using std::ostream;
+using std::shared_ptr;
+using std::string;
 
 namespace GraphCalc {
 BinTree::BinTree(string value) : left(nullptr), right(nullptr), value(value) {}

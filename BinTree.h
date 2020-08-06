@@ -5,19 +5,17 @@
 #include <string>
 
 namespace GraphCalc {
-using std::shared_ptr;
-using std::string;
 
 class BinTree {
-    string value;
-    shared_ptr<BinTree> left;
-    shared_ptr<BinTree> right;
+    std::string value;
+    std::shared_ptr<BinTree> left;
+    std::shared_ptr<BinTree> right;
 
    public:
     /**
      * Creates an BinTree with a single node containing `value`
      */
-    BinTree(string value);
+    BinTree(std::string value);
     /**
      * Deletes the tree
      */
@@ -25,37 +23,37 @@ class BinTree {
     /**
      * Sets the value
      */
-    void set(string value);
+    void set(std::string value);
     /**
      * Gets the value
      */
-    string get() const;
+    std::string get() const;
     /**
      * Gets the left element
      */
-    shared_ptr<BinTree> getLeft();
+    std::shared_ptr<BinTree> getLeft();
     /**
      * Gets the right element
      */
-    shared_ptr<BinTree> getRight();
+    std::shared_ptr<BinTree> getRight();
     /**
      * Sets the left element
      */
-    void setLeft(shared_ptr<BinTree> sub_tree);
+    void setLeft(std::shared_ptr<BinTree> sub_tree);
     /**
      * Sets the right element
      */
-    void setRight(shared_ptr<BinTree> sub_tree);
+    void setRight(std::shared_ptr<BinTree> sub_tree);
     /**
      * Creates a left element with value.
      * If one already existsm throw exception
      */
-    shared_ptr<BinTree> createLeft(string value);
+    std::shared_ptr<BinTree> createLeft(std::string value);
     /**
      * Creates a right element with value.
      * If one already existsm throw exception
      */
-    shared_ptr<BinTree> createRight(string value);
+    std::shared_ptr<BinTree> createRight(std::string value);
     /**
      * Remove the left element. Putting nullptr instead
      */
@@ -67,8 +65,8 @@ class BinTree {
     /**
      * Streams string output to the given ostream
      */
-    static void print2DUtil(std::ostream &os, const shared_ptr<BinTree> root,
-                            int space);
+    static void print2DUtil(std::ostream &os,
+                            const std::shared_ptr<BinTree> root, int space);
     /**
      * Compare two trees to make sure they contain the same values
      */
@@ -77,7 +75,7 @@ class BinTree {
     bool isLeaf() const;
     void cleanup();
 };
-std::ostream &operator<<(std::ostream &os, const shared_ptr<BinTree> tree);
+std::ostream &operator<<(std::ostream &os, const std::shared_ptr<BinTree> tree);
 }  // namespace GraphCalc
 
 #endif
