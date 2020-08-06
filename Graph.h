@@ -46,6 +46,7 @@ class Graph {
     // Graph Comparison
     bool operator==(const Graph& other) const;
     bool operator!=(const Graph& other) const;
+    void saveToFile(std::string filename) const;
     static std::string pairNodes(const std::string& a, const std::string& b);
 
     friend std::ostream& operator<<(std::ostream& os, const Graph& graph);

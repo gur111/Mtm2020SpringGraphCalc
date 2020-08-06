@@ -1,6 +1,7 @@
 #include "Graph.h"
 
 #include <algorithm>
+#include <fstream>
 #include <iostream>
 #include <iterator>
 #include <regex>
@@ -68,9 +69,8 @@ void Graph::addEdge(string edge_literal) {
         // TODO: Throw invalid format
         return;
     }
-    string first = edge_literal.substr(1, nodes_delim - 1);
+    string first = edge_literal.substr(0, nodes_delim);
     string second = edge_literal.substr(nodes_delim + 1);
-    second = second.substr(0, second.length() - 1);
 
     if (nodes.find(first) == nodes.end() or nodes.find(second) == nodes.end()) {
         // TODO: Throw exception node doesn't exist;
@@ -89,19 +89,14 @@ void Graph::addEdges(string edges_literal) {
     string delim = string(">,<");
     while ((next_delim_pos = edges_literal.substr(delim_pos).find(delim)) !=
            string::npos) {
-        addEdge(edges_literal.substr(delim_pos, next_delim_pos));
-        delim_pos += next_delim_pos + delim.length();
+        addEdge(edges_literal.substr(delim_pos + 1, next_delim_pos - 1));
+        delim_pos += next_delim_pos + delim.length() - 1;
     }
-    addEdge(edges_literal.substr(delim_pos));
+    addEdge(edges_literal.substr(delim_pos + 1,
+                                 edges_literal.length() - delim_pos - 2));
 }
 
 Graph::Graph(std::string literal) {
-    std::smatch matches;
-    string name_prefix = "\\s*([A-z\\[])";
-    string name_chars = "[A-z0-9;\\[\\]]";
-    string node_regex = "(" + name_prefix + name_chars + "*)\\s*";
-    string edge_regex = "\\s*<" + node_regex + "," + node_regex + ">\\s*";
-
     int delim_pos = literal.find("|");
     string nodes_literal;
     string edges_literal;
@@ -229,6 +224,34 @@ Graph Graph::operator!() const {
 
     return Graph(this->nodes, new_edges);
 }
+
+void Graph::saveToFile(std::string filename) const {
+    std::ofstream outfile;
+    outfile.exceptions(std::ofstream::failbit | std::ofstream::badbit);
+    outfile.open(filename, std::ios_base::binary);
+    // Node count
+    unsigned int tmp_num = nodes.size();
+    outfile.write((const char*)&tmp_num, sizeof(int));
+    tmp_num = edges.size();
+    outfile.write((const char*)&tmp_num, sizeof(int));
+    for (auto node : nodes) {
+        tmp_num = node.length();
+        outfile.write((const char*)&tmp_num, sizeof(int));
+        outfile.write(node.c_str(), tmp_num);
+    }
+    for (auto edge : edges) {
+        for (auto dnode : edge.second) {
+            tmp_num = edge.first.length();
+            outfile.write((const char*)&tmp_num, sizeof(int));
+            outfile.write(edge.first.c_str(), tmp_num);
+            tmp_num = dnode.length();
+            outfile.write((const char*)&tmp_num, sizeof(int));
+            outfile.write(dnode.c_str(), tmp_num);
+        }
+    }
+    outfile.close();
+}
+
 std::ostream& operator<<(std::ostream& os, const Graph& graph) {
     for (auto node : graph.nodes) {
         os << node << endl;
