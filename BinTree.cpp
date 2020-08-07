@@ -1,5 +1,7 @@
 #include "BinTree.h"
 
+#include "Exceptions.h"
+
 #define TREE_PRINT_SPREAD 10
 using std::cout;
 using std::endl;
@@ -29,13 +31,13 @@ void BinTree::setRight(shared_ptr<BinTree> sub_tree) { this->right = sub_tree; }
 
 shared_ptr<BinTree> BinTree::createLeft(string value) {
     if (left) {
-        // TODO: Throw `already exists` exception
+        throw MultipleDeclarations("Left child in tree already exist.");
     }
     return left = shared_ptr<BinTree>(new BinTree(value));
 }
 shared_ptr<BinTree> BinTree::createRight(string value) {
     if (right) {
-        // TODO: Throw `already exists` exception
+        throw MultipleDeclarations("Right child in tree already exist.");
     }
     return right = shared_ptr<BinTree>(new BinTree(value));
 }
@@ -66,7 +68,7 @@ bool BinTree::operator==(const BinTree &other) const {
 bool BinTree::operator!=(const BinTree &other) const {
     return not(*this == other);
 }
-bool BinTree::isLeaf() const { return (left or right); }
+bool BinTree::isLeaf() const { return (left == nullptr and right == nullptr); }
 
 void GraphCalc::BinTree::cleanup() {
     if (left) {
@@ -84,10 +86,9 @@ void GraphCalc::BinTree::cleanup() {
             side = left;
         } else {
             if (left == nullptr and right == nullptr) {
-                std::cout << "Error: leaf contains an empty value" << std::endl;
+                throw Unknown("Leaf contains an empty value.");
             } else {
-                std::cout << "Error: Expected operator between operands"
-                          << std::endl;
+                throw SyntaxError("Expected operator between operands.");
             }
             return;
         }

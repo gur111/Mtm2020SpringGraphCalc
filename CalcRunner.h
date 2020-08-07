@@ -8,7 +8,7 @@
 #include "GraphCalc.h"
 
 namespace GraphCalc {
-int calcRunner(std::istream &is, std::ostream &os);
+int calcRunner(std::istream &is, std::ostream &os, bool interactive = true);
 }  // namespace GraphCalc
 
 #endif

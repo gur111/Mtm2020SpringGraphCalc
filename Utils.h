@@ -6,7 +6,7 @@
 namespace GraphCalc {
 std::string extractGraphLiteralToken(const std::string &subline);
 void sanitizeGraphLiteralToken(std::string &token);
-std::string extractFuncParams(std::string command);
+std::string extractFuncParams(std::string command, bool start_to_end = true);
 }  // namespace GraphCalc
 
 #endif

@@ -11,7 +11,6 @@ using std::string;
 namespace GraphCalc {
 void GraphCalc::runCmd(string command) {
     shared_ptr<BinTree> tree = parseLine(command);
-    std::cout << tree << std::endl;
     executeTree(storage, tree);
 }
 }  // namespace GraphCalc

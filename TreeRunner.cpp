@@ -3,6 +3,7 @@
 #include "TreeRunner.h"
 
 #include "Constants.h"
+#include "Exceptions.h"
 #include "Utils.h"
 
 using std::shared_ptr;
@@ -14,30 +15,35 @@ shared_ptr<Graph> executeTree(StorageManager &storage,
     if (tree->get() == "load" or
         UNARY_OPERATORS.find(tree->get()) != UNARY_OPERATORS.end()) {
         if (tree->getRight() != nullptr) {
-            // TODO: Throw exception, unary operator has right argument
+            throw InvalidFormat("Unary operator has right argument.");
         }
         if (tree->getLeft() == nullptr) {
-            // TODO: Throw exception, unary operator missing operand
+            throw InvalidFormat("Unary operator missing operand.");
         }
-        shared_ptr<Graph> graph = executeTree(storage, tree->getLeft());
+        shared_ptr<Graph> graph;
+        if (tree->get() == "load") {
+            graph = Graph::loadFromFile(tree->getLeft()->get());
+        } else if (tree->get() == "!") {
+            graph = executeTree(storage, tree->getLeft());
+        }
         if (graph == nullptr) {
-            // TODO: Throw exception. Sub expression has a null value
-            return nullptr;
+            throw InvalidFormat("Sub expressions has a null value.");
         }
         if (tree->get() == "!") {
             return shared_ptr<Graph>(new Graph(!*graph));
         } else if (tree->get() == "load") {
-            return graph;  // TODO: Handle load
+            return graph;
+        } else {
+            throw Unknown("This should've never happened.");
         }
     } else if (BIN_OPERATORS.find(tree->get()) != BIN_OPERATORS.end()) {
         if (tree->getLeft() == nullptr or tree->getRight() == nullptr) {
-            // TODO: Throw exception, binary operator missing operand
+            throw InvalidFormat("Binary operator missing operand.");
         }
-
+        std::cout << tree;  // TODO: Remove
         shared_ptr<Graph> graphR = executeTree(storage, tree->getRight());
         if (graphR == nullptr) {
-            // TODO: Throw exception. Sub expression has a null value
-            return nullptr;
+            throw InvalidFormat("Sub expressions has a null value.");
         }
         if (tree->get() == "=") {
             // TODO: Validate left name
@@ -45,8 +51,7 @@ shared_ptr<Graph> executeTree(StorageManager &storage,
         }
         shared_ptr<Graph> graphL = executeTree(storage, tree->getLeft());
         if (graphL == nullptr) {
-            // TODO: Throw exception. Sub expression has a null value
-            return nullptr;
+            throw InvalidFormat("Sub expressions has a null value.");
         }
 
         if (tree->get() == "+") {
@@ -57,6 +62,8 @@ shared_ptr<Graph> executeTree(StorageManager &storage,
             return shared_ptr<Graph>(new Graph((*graphL) * (*graphR)));
         } else if (tree->get() == "^") {
             return shared_ptr<Graph>(new Graph((*graphL) ^ (*graphR)));
+        } else {
+            throw Unknown("Unknown operator: " + tree->get());
         }
     } else if (tree->get() == "print") {
         // No need to verify there's no right node because of the way parser
@@ -66,7 +73,7 @@ shared_ptr<Graph> executeTree(StorageManager &storage,
     } else if (tree->get() == "delete") {
         // No need to verify format. If the var is invalid name, it won't exist
         // so an error will be thrown either way
-        storage.remove(tree->getRight()->get());
+        storage.remove(tree->getLeft()->get());
         return nullptr;
     } else if (tree->get() == "save") {
         // TODO: Verify right is leaf and filename is valid
@@ -82,8 +89,7 @@ shared_ptr<Graph> executeTree(StorageManager &storage,
         return nullptr;
     } else /* TODO:  if (is valid name/graph literal) */ {
         if (not tree->isLeaf()) {
-            // TODO: Throw exception, varname/graph literal has a child
-            // TODO: Handle getting graph literals as well
+            throw InvalidFormat("Var-name/graph-literal has a child");
         }
         string literal = extractGraphLiteralToken(tree->get());
         if (literal != "") {
