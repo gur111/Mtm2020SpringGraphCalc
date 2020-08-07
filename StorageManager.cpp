@@ -1,11 +1,13 @@
 #include "StorageManager.h"
 
+#include "Exceptions.h"
+
 using std::shared_ptr;
 
 namespace GraphCalc {
 void StorageManager::who() {
     for (auto graph : vars) {
-        std::cout << graph.first;
+        std::cout << graph.first << std::endl;
     }
 }
 void StorageManager::reset() { this->vars.clear(); }
@@ -15,14 +17,13 @@ shared_ptr<Graph> StorageManager::set(std::string name,
 }
 void StorageManager::remove(std::string name) {
     if (this->vars.erase(name) == 0) {
-        // TODO: Throw error, element doesn't exist
+        throw Missing("Graph: " + name + " not declared");
     }
 }
 
 shared_ptr<Graph> StorageManager::get(std::string name) {
     if (vars.find(name) == vars.end()) {
-        // TODO: Throw exception var not defined
-        return nullptr;
+        throw Missing("Graph: " + name + " not declared");
     } else {
         return vars[name];
     }

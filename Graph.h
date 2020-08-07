@@ -3,12 +3,17 @@
 
 #include <iostream>
 #include <map>
+#include <memory>
 #include <set>
 #include <string>
+
+#include "Exceptions.h"
 
 namespace GraphCalc {
 class Graph {
    private:
+    static void readNode(std::ifstream& ifs, char*& name,
+                         unsigned int& max_size);
     std::set<std::string> nodes;
     std::map<std::string, std::set<std::string>> edges;
 
@@ -47,6 +52,7 @@ class Graph {
     bool operator==(const Graph& other) const;
     bool operator!=(const Graph& other) const;
     void saveToFile(std::string filename) const;
+    static std::shared_ptr<Graph> loadFromFile(std::string filename);
     static std::string pairNodes(const std::string& a, const std::string& b);
 
     friend std::ostream& operator<<(std::ostream& os, const Graph& graph);

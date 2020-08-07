@@ -5,11 +5,12 @@
 #include <iostream>
 #include <iterator>
 #include <regex>
-
+#define DEFAULT_NAME_SIZE 10
 using std::cout;
 using std::endl;
 using std::map;
 using std::set;
+using std::shared_ptr;
 using std::string;
 
 namespace GraphCalc {
@@ -50,14 +51,15 @@ set<T> operator^(const set<T>& a, const set<T>& b) {
 }
 
 void Graph::addNodes(string nodes_literal) {
-    if (nodes_literal == "") {
-        // TODO: Throw exception no nodes found
-        return;
-    }
     int next_delim_pos, delim_pos = 0;
+    string node;
     while ((next_delim_pos = nodes_literal.substr(delim_pos).find(",")) !=
            string::npos) {
-        nodes.insert(nodes_literal.substr(delim_pos, next_delim_pos));
+        node = nodes_literal.substr(delim_pos, next_delim_pos);
+        if (nodes.find(node) != nodes.end()) {
+            throw MultipleDeclarations(node + " has already been declared.");
+        }
+        nodes.insert(node);
         delim_pos += next_delim_pos + 1;
     }
     nodes.insert(nodes_literal.substr(delim_pos));
@@ -66,15 +68,21 @@ void Graph::addNodes(string nodes_literal) {
 void Graph::addEdge(string edge_literal) {
     int nodes_delim;
     if ((nodes_delim = edge_literal.find(",")) == string::npos) {
-        // TODO: Throw invalid format
-        return;
+        throw InvalidFormat("The edge \"" + edge_literal +
+                            "\" is in an invalid format.");
     }
     string first = edge_literal.substr(0, nodes_delim);
     string second = edge_literal.substr(nodes_delim + 1);
 
-    if (nodes.find(first) == nodes.end() or nodes.find(second) == nodes.end()) {
-        // TODO: Throw exception node doesn't exist;
-        return;
+    if (nodes.find(first) == nodes.end()) {
+        throw Missing("The node: " + first + ".");
+    } else if (nodes.find(second) == nodes.end()) {
+        throw Missing("The node: " + second + ".");
+    } else if (first == second) {
+        throw InvalidFormat("In " + edge_literal + "Self loops not allowed.");
+    } else if (edges[first].find(second) != edges[first].end()) {
+        throw InvalidFormat("In " + edge_literal +
+                            "Parallel edges not allowed.");
     }
     edges[first] += second;
 }
@@ -83,8 +91,7 @@ void Graph::addEdges(string edges_literal) {
     // Add edges
     int next_delim_pos, delim_pos = edges_literal.find("<");
     if (delim_pos == string::npos) {
-        // TODO: Throw exception invalid format/no edges found
-        return;
+        throw InvalidFormat("In: " + edges_literal + ".");
     }
     string delim = string(">,<");
     while ((next_delim_pos = edges_literal.substr(delim_pos).find(delim)) !=
@@ -120,14 +127,11 @@ Graph::Graph(const set<string>& nodes, const map<string, set<string>>& edges)
     : nodes(nodes), edges(edges) {
     for (auto node : edges) {
         if (nodes.find(node.first) == nodes.cend()) {
-            // TODO: Throw exception
-            cout << "Error: node " << node.first << " is not declared" << endl;
+            throw Missing("The node: " + node.first + ".");
         }
         for (auto dst_node : node.second) {
             if (nodes.find(dst_node) == nodes.cend()) {
-                // TODO: Throw exception
-                cout << "Error: node " << dst_node << " is not declared"
-                     << endl;
+                throw Missing("The node: " + dst_node + ".");
             }
         }
     }
@@ -166,14 +170,14 @@ Graph Graph::operator*(const Graph& other) const {
     map<string, set<string>> nedges;
     set<string> nnodes;
     for (auto snode : this->nodes) {
-        for (auto onode : this->nodes) {
+        for (auto onode : other.nodes) {
             nnodes.insert(pairNodes(snode, onode));
         }
     }
 
     for (auto sedge : this->edges) {
         for (auto s_dst_node : sedge.second) {
-            for (auto oedge : this->edges) {
+            for (auto oedge : other.edges) {
                 for (auto o_dst_node : oedge.second) {
                     nedges[pairNodes(sedge.first, oedge.first)].insert(
                         pairNodes(s_dst_node, o_dst_node));
@@ -213,6 +217,7 @@ Graph Graph::operator!() const {
     for (auto node : this->nodes) {
         // Remove edges to nodes in the `other` graph
         set<string> dst_nodes = this->nodes;
+        dst_nodes.erase(node);
         // If the node has edge in the original graph
         if (this->edges.find(node) != this->edges.cend()) {
             dst_nodes = dst_nodes - this->edges.find(node)->second;
@@ -225,27 +230,76 @@ Graph Graph::operator!() const {
     return Graph(this->nodes, new_edges);
 }
 
+void Graph::readNode(std::ifstream& ifs, char*& name, unsigned int& max_size) {
+    unsigned name_size;
+    ifs.read((char*)&name_size, sizeof(name_size));
+    // Expand name allocation if needed
+    if (name_size >= max_size) {
+        delete[] name;
+        max_size = name_size + 1;
+        name = new char[max_size];
+    }
+    name[name_size] = '\0';
+    ifs.read(name, name_size);
+}
+
+std::shared_ptr<Graph> Graph::loadFromFile(std::string filename) {
+    shared_ptr<Graph> graph(new Graph());
+    std::ifstream infile;
+    infile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+    infile.open(filename, std::ios_base::binary);
+    unsigned int node_count, edge_count;
+    // Get nodes and edges count
+    infile.read((char*)&node_count, sizeof(node_count));
+    infile.read((char*)&edge_count, sizeof(edge_count));
+    // Alocate space for a temp node names variable
+    unsigned int name_size;
+    unsigned int name_max_size = DEFAULT_NAME_SIZE;
+    char* name = new char[name_max_size];
+    // Load nodes
+    for (int i = 0; i < node_count; i++) {
+        readNode(infile, name, name_max_size);
+        graph->nodes += string(name);
+    }
+    // Load edges
+    string snode;
+    for (int i = 0; i < edge_count; i++) {
+        // src node
+        readNode(infile, name, name_max_size);
+        snode = name;
+        // dst node
+        readNode(infile, name, name_max_size);
+        graph->edges[snode] += name;
+    }
+
+    delete[] name;
+    return graph;
+}
+
 void Graph::saveToFile(std::string filename) const {
     std::ofstream outfile;
     outfile.exceptions(std::ofstream::failbit | std::ofstream::badbit);
     outfile.open(filename, std::ios_base::binary);
     // Node count
     unsigned int tmp_num = nodes.size();
-    outfile.write((const char*)&tmp_num, sizeof(int));
-    tmp_num = edges.size();
-    outfile.write((const char*)&tmp_num, sizeof(int));
+    outfile.write((const char*)&tmp_num, sizeof(tmp_num));
+    tmp_num = 0;
+    for (auto edge : edges) {
+        tmp_num += edge.second.size();
+    }
+    outfile.write((const char*)&tmp_num, sizeof(tmp_num));
     for (auto node : nodes) {
         tmp_num = node.length();
-        outfile.write((const char*)&tmp_num, sizeof(int));
+        outfile.write((const char*)&tmp_num, sizeof(tmp_num));
         outfile.write(node.c_str(), tmp_num);
     }
     for (auto edge : edges) {
         for (auto dnode : edge.second) {
             tmp_num = edge.first.length();
-            outfile.write((const char*)&tmp_num, sizeof(int));
+            outfile.write((const char*)&tmp_num, sizeof(tmp_num));
             outfile.write(edge.first.c_str(), tmp_num);
             tmp_num = dnode.length();
-            outfile.write((const char*)&tmp_num, sizeof(int));
+            outfile.write((const char*)&tmp_num, sizeof(tmp_num));
             outfile.write(dnode.c_str(), tmp_num);
         }
     }
