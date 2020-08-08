@@ -19,16 +19,28 @@ namespace GraphCalc {
 // Fixtures
 
 struct files_state {
+    string name;
     string in_filename;
     string out_filename;
 };
 
 struct FullCalcInputFileTest : testing::Test,
-                               testing::WithParamInterface<files_state> {};
+                               testing::WithParamInterface<files_state> {
+    string case_name;
+    FullCalcInputFileTest() { case_name = GetParam().name; }
+    struct PrintToStringParamName {
+        template <class ParamType>
+        std::string operator()(
+            const testing::TestParamInfo<ParamType> &info) const {
+            auto state = static_cast<files_state>(info.param);
+            return state.name;
+        }
+    };
+};
 
 // Tests
 
-TEST_P(FullCalcInputFileTest, DaniTestfile) {
+TEST_P(FullCalcInputFileTest, TestFiles) {
     auto state = GetParam();
     std::ifstream infile;
     std::ifstream outfile;
@@ -48,14 +60,14 @@ TEST_P(FullCalcInputFileTest, DaniTestfile) {
 
     std::regex lines_regex("[^\\n]+");
     auto out_begin =
-        std::sregex_iterator(output.begin(), expected_out.end(), lines_regex);
+        std::sregex_iterator(output.begin(), output.end(), lines_regex);
     auto expected_begin = std::sregex_iterator(expected_out.begin(),
                                                expected_out.end(), lines_regex);
     auto lines_end = std::sregex_iterator();
-
-    for (std::sregex_iterator out = out_begin, exp = expected_begin;
-         out != lines_end || exp != lines_end; ++out, ++exp) {
-        EXPECT_TRUE(out != lines_end && exp != lines_end);
+    std::sregex_iterator out = out_begin, exp = expected_begin;
+    for (; out != lines_end and exp != lines_end; ++out, ++exp) {
+        ASSERT_TRUE(out != lines_end);
+        ASSERT_TRUE(exp != lines_end);
         std::string out_match_str = (*out).str();
         std::string exp_match_str = (*exp).str();
         cout << "Expected: " << exp_match_str << ". Got: " << out_match_str
@@ -64,16 +76,17 @@ TEST_P(FullCalcInputFileTest, DaniTestfile) {
             exp_match_str.find("Error: ") == 0) {
             continue;
         }
-        EXPECT_EQ(exp_match_str, out_match_str);
+        ASSERT_EQ(exp_match_str, out_match_str);
     }
 }
 
 INSTANTIATE_TEST_CASE_P(
     Default, FullCalcInputFileTest,
-    testing::Values(files_state{"../mtm_fnal_test/dani_input.txt",
-                                "../mtm_fnal_test/dani_output.txt"},
-                    files_state{"../mtm_fnal_test/gur_input.txt",
-                                "../mtm_fnal_test/gur_output.txt"}));
+    testing::Values(files_state{"Dani", "../mtm_final_test/dani_input.txt",
+                                "../mtm_final_test/dani_output.txt"},
+                    files_state{"Gur", "../mtm_final_test/gur_input.txt",
+                                "../mtm_final_test/gur_output.txt"}),
+    FullCalcInputFileTest::PrintToStringParamName());
 
 TEST(FullCalcValid, BasicLiteralRead) {
     char str[] = "G1={x1,x2,x3|<x1,x2>,<x3,x2>,<x2,x1>,<x3,x1>}";
@@ -114,7 +127,7 @@ TEST(FullCalcValid, BasicLiteralRead) {
     std::cin.rdbuf(is.rdbuf());
     calcRunner(std::cin, std::cout, false);
     std::cout.rdbuf(cout_bu);
-    EXPECT_EQ(expected, os.str());
+    ASSERT_EQ(expected, os.str());
 }
 
 }  // namespace GraphCalc
