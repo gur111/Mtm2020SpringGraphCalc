@@ -79,10 +79,10 @@ void Graph::addEdge(string edge_literal) {
     } else if (nodes.find(second) == nodes.end()) {
         throw Missing("The node: " + second + ".");
     } else if (first == second) {
-        throw InvalidFormat("In " + edge_literal + "Self loops not allowed.");
+        throw InvalidFormat("In " + edge_literal + " Self loops not allowed.");
     } else if (edges[first].find(second) != edges[first].end()) {
         throw InvalidFormat("In " + edge_literal +
-                            "Parallel edges not allowed.");
+                            " Parallel edges not allowed.");
     }
     edges[first] += second;
 }
