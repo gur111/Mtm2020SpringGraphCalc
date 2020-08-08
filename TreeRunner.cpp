@@ -48,7 +48,10 @@ shared_ptr<Graph> executeTree(StorageManager &storage,
             throw InvalidFormat("Sub expressions has a null value.");
         }
         if (tree->get() == "=") {
-            // TODO: Validate left name
+            auto left = tree->getLeft();
+            if (not left->isLeaf() || not isValidGraphName(left->get())) {
+                throw InvalidFormat("Invalid expression left to a \"=\"");
+            }
             return storage.set(tree->getLeft()->get(), graphR);
         }
         shared_ptr<Graph> graphL = executeTree(storage, tree->getLeft());
@@ -79,6 +82,9 @@ shared_ptr<Graph> executeTree(StorageManager &storage,
         return nullptr;
     } else if (tree->get() == "save") {
         // TODO: Verify right is leaf and filename is valid
+        if (not tree->getRight()->isLeaf()) {
+            throw InvalidFormat("Invalid second operand for \"save\" function.");
+        }
         executeTree(storage, tree->getLeft())
             ->saveToFile(tree->getRight()->get());
         return nullptr;
@@ -91,12 +97,15 @@ shared_ptr<Graph> executeTree(StorageManager &storage,
         return nullptr;
     } else /* TODO:  if (is valid name/graph literal) */ {
         if (not tree->isLeaf()) {
-            throw InvalidFormat("Var-name/graph-literal has a child");
+            throw InvalidFormat("Var-name/graph-literal has a child.");
         }
         string literal = extractGraphLiteralToken(tree->get());
         if (literal != "") {
             return shared_ptr<Graph>(new Graph(literal));
         } else {
+            if(not isValidGraphName(tree->get())){
+                throw InvalidFormat("Graph name "+tree->get()+" is invalid.");
+            }
             // TODO: Validate name
             return storage.get(tree->get());
         }
