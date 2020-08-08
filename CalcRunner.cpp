@@ -25,5 +25,5 @@ int calcRunner(std::istream &is, std::ostream &os, bool interactive) {
         }
     }
     return 0;
-}  // namespace GraphCalc
+}  
 }  // namespace GraphCalc
