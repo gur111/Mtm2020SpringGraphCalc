@@ -1,7 +1,9 @@
 #include <gtest/gtest.h>
 
+#include <fstream>
 #include <iostream>
 #include <map>
+#include <regex>
 #include <set>
 #include <sstream>
 #include <string>
@@ -14,42 +16,105 @@ using std::map;
 using std::set;
 using std::string;
 namespace GraphCalc {
+// Fixtures
 
-// struct BasicGraphTest : testing::Test {
-//     set<string> nodes;
-//     map<string, set<string>> edges;
-//     Graph graph;
-//     string expected_output;
+struct files_state {
+    string in_filename;
+    string out_filename;
+};
 
-//     BasicGraphTest(set<string> nodes = {"x2", "x4", "x3", "x1"},
-//                    map<string, set<string>> edges)
-//         : nodes(nodes), edges(edges), graph(Graph(nodes, edges)) {
-//         for (auto node : nodes) {
-//             expected_output += node + "\n";
-//         }
-//         expected_output += "$\n";
-//         for (auto edge : edges) {
-//             for (auto dnode : edge.second) {
-//                 expected_output += edge.first + +" " + dnode + "\n";
-//             }
-//         }
-//     }
-// };
+struct FullCalcInputFileTest : testing::Test,
+                               testing::WithParamInterface<files_state> {};
 
 // Tests
+
+TEST_P(FullCalcInputFileTest, DaniTestfile) {
+    auto state = GetParam();
+    std::ifstream infile;
+    std::ifstream outfile;
+    infile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+    outfile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+    infile.open(state.in_filename, std::ios_base::binary);
+    std::ostringstream os;
+    std::streambuf *cout_bu;
+    cout_bu = std::cout.rdbuf();
+    std::cout.rdbuf(os.rdbuf());
+    calcRunner(infile, std::cout, false);
+    std::cout.rdbuf(cout_bu);
+    outfile.open(state.out_filename, std::ios_base::binary);
+    string expected_out((std::istreambuf_iterator<char>(outfile)),
+                        std::istreambuf_iterator<char>());
+    string output = os.str();
+
+    std::regex lines_regex("[^\\n]+");
+    auto out_begin =
+        std::sregex_iterator(output.begin(), expected_out.end(), lines_regex);
+    auto expected_begin = std::sregex_iterator(expected_out.begin(),
+                                               expected_out.end(), lines_regex);
+    auto lines_end = std::sregex_iterator();
+
+    for (std::sregex_iterator out = out_begin, exp = expected_begin;
+         out != lines_end || exp != lines_end; ++out, ++exp) {
+        EXPECT_TRUE(out != lines_end && exp != lines_end);
+        std::string out_match_str = (*out).str();
+        std::string exp_match_str = (*exp).str();
+        cout << "Expected: " << exp_match_str << ". Got: " << out_match_str
+             << endl;
+        if (out_match_str.find("Error: ") == 0 and
+            exp_match_str.find("Error: ") == 0) {
+            continue;
+        }
+        EXPECT_EQ(exp_match_str, out_match_str);
+    }
+}
+
+INSTANTIATE_TEST_CASE_P(
+    Default, FullCalcInputFileTest,
+    testing::Values(files_state{"../mtm_fnal_test/dani_input.txt",
+                                "../mtm_fnal_test/dani_output.txt"},
+                    files_state{"../mtm_fnal_test/gur_input.txt",
+                                "../mtm_fnal_test/gur_output.txt"}));
 
 TEST(FullCalcValid, BasicLiteralRead) {
     char str[] = "G1={x1,x2,x3|<x1,x2>,<x3,x2>,<x2,x1>,<x3,x1>}";
     std::istringstream is(
-        string("G1={x1,x2,x3|<x1,x2>,<x3,x2>,<x2,x1>,<x3,x1>}"));
-    GraphCalc calc;
-    calc.runCmd("G1={x1,x2,x3|<x1,x2>,<x3,x2>,<x2,x1>,<x3,x1>}");
-    calc.runCmd("G2 = G1");
-    calc.runCmd("G3 = G1*G2-G1*G1");
-    calc.runCmd("print(G3)");
-
-    // calcRunner(is, cout);
-    // EXPECT_EQ(expected_ss.str(), ss.str());
+        "G1={x1,x2,x3|<x1,x2>,<x3,x2>,<x2,x1>,<x3,x1>}"
+        "\nG2 = !{x1,x3}"
+        "\nprint(G2)"
+        "\nG3 = {x2, x1}"
+        "\nG3 = !G2*G3"
+        "\nprint(G3)"
+        "\nG4 = G3*G2"
+        "\nprint(G4)"
+        "\nprint(G1)"
+        "\nprint(G2)"
+        "\nprint(G3)"
+        "\nsave(G1, g4.cg)"
+        "\nG3 =load(g4.cg)"
+        "\nprint(G1)"
+        "\nsave(g2 = {a,[d;],c,b| <a,b>, <[d;],c>, <a,[d;]>},g2.cg)"
+        "\ndelete(G3)"
+        "\ndelete(G3)");
+    string expected =
+        "x1\nx3\n$\nx1 x3\nx3 x1"
+        "\n[x1;x1]\n[x1;x2]\n[x3;x1]\n[x3;x2]\n$"
+        "\n[[x1;x1];x1]\n[[x1;x1];x3]\n[[x1;x2];x1]\n[[x1;x2];x3]\n[[x3;x1];x1]"
+        "\n[[x3;x1];x3]\n[[x3;x2];x1]\n[[x3;x2];x3]\n$"
+        "\nx1\nx2\nx3\n$\nx1 x2\nx2 x1\nx3 x1\nx3 x2"
+        "\nx1\nx3\n$\nx1 x3\nx3 x1"
+        "\n[x1;x1]\n[x1;x2]\n[x3;x1]\n[x3;x2]\n$"
+        "\nx1\nx2\nx3\n$\nx1 x2\nx2 x1\nx3 x1\nx3 x2"
+        "\nError: Missing Declaration. Graph: G3 not declared\n";
+    std::ostringstream os;
+    std::streambuf *cout_bu;
+    cout_bu = std::cout.rdbuf();
+    std::cout.rdbuf(os.rdbuf());
+    std::streambuf *cin_bu;
+    cin_bu = std::cin.rdbuf();
+    std::cin.rdbuf(is.rdbuf());
+    calcRunner(std::cin, std::cout, false);
+    std::cout.rdbuf(cout_bu);
+    EXPECT_EQ(expected, os.str());
 }
 
 }  // namespace GraphCalc
