@@ -31,7 +31,9 @@ void BinTree::setRight(shared_ptr<BinTree> sub_tree) { this->right = sub_tree; }
 
 shared_ptr<BinTree> BinTree::createLeft(string value) {
     if (left) {
-        throw MultipleDeclarations("Left child in tree already exist.");
+        throw MultipleDeclarations("Can't create \"" + value +
+                                   "\" Left child in tree (\"" + left->get() +
+                                   "\") already exist.");
     }
     return left = shared_ptr<BinTree>(new BinTree(value));
 }
