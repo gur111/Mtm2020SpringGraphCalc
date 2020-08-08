@@ -7,6 +7,7 @@
 
 using std::shared_ptr;
 using std::string;
+using std::vector;
 
 namespace GraphCalc {
 string extractGraphLiteralToken(const string &subline) {
@@ -23,6 +24,34 @@ string extractGraphLiteralToken(const string &subline) {
         return "";
     }
     return matches[0];
+}
+bool areBracesBalanced(const string &line) {
+    vector<char> braces_stack;
+    for (int i = 0; i < line.length(); i++) {
+        switch (line[i]) {
+            case '(':
+            case '{':
+            case '[':
+                braces_stack.push_back(line[i]);
+                break;
+            case ')':
+                if (braces_stack.size() == 0 or braces_stack.back() != '(') {
+                    return false;
+                }
+                braces_stack.pop_back();
+                break;
+            case '}':
+            case ']':
+                if (braces_stack.size() == 0 or
+                    line[i] - 2 != braces_stack.back()) {
+                    return false;
+                }
+                braces_stack.pop_back();
+                break;
+        }
+    }
+
+    return braces_stack.size() == 0;
 }
 
 bool isValidGraphName(const string &name) {

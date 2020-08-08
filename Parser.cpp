@@ -34,6 +34,10 @@ shared_ptr<BinTree> parseLine(const string &line) {
     Stage stage = Stage::DEFAULT;
     shared_ptr<TokenType> type(new TokenType());
 
+    if (not areBracesBalanced(line)) {
+        throw SyntaxError("Braces unbalanced.");
+    }
+
     getNextToken(line, false, false, type);
 
     string tmp_token = getNextToken("", true);
@@ -83,9 +87,6 @@ shared_ptr<BinTree> parseLine(const string &line) {
             throw SyntaxError(tmp_token +
                               " unexpected after \"save\" function call.");
         }
-
-        // TODO: Validate first arg is a variable name. May be done in the
-        // treeRunner so might not actually be needed here
         tree_stack.push_back(pairBO(curr_tree->createLeft(""), ""));
         curr_tree = curr_tree->getLeft();
         getNextToken(first_param.substr(0, comma_pos), false, false, type);
@@ -95,97 +96,76 @@ shared_ptr<BinTree> parseLine(const string &line) {
         curr_tree->set(getNextToken());
         // Make sure no more tokens
         if ((tmp_token = getNextToken()) != "") {
-            throw SyntaxError("Unexpected: " + tmp_token + " after command");
+            throw SyntaxError("Unexpected: " + tmp_token + " after command.");
         }
         return tree_root;
     }
 
     // Handle mutable expression
     while ((token = getNextToken()) != "") {
-        switch (stage) {
-            // If outside a `load` function
-            case Stage::DEFAULT:
-                if (token == "(") {
-                    curr_tree->createLeft("");
-                    tree_stack.push_back(pairBO(curr_tree, ""));
-                    curr_tree = curr_tree->getLeft();
-                } else if (token == ")") {
-                    // if (tree_stack.back().first == tree_root) {
-                    if (curr_tree == tree_root) {
-                        throw SyntaxError(
-                            "Matching openning bracket not detected.");
-                    }
-                    if (tree_stack.size() == 0) {
-                        throw SyntaxError("Failed to parse line after " +
-                                          token);
-                    }
-                    curr_tree = tree_stack.back().first;
-                    tree_stack.pop_back();
-                } else if (BIN_OPERATORS.find(token) != BIN_OPERATORS.end()) {
-                    // Handle binary operators
-                    curr_tree->set(token);
-                    curr_tree->createRight("");
-                    tree_stack.push_back(pairBO(curr_tree, ""));
-                    curr_tree = curr_tree->getRight();
-                } else if (UNARY_OPERATORS.find(token) !=
-                           UNARY_OPERATORS.end()) {
-                    // Handle unary operatorsUNARY_OPERATORS.end()) {
-                    // Handle unary operators
-                    curr_tree->createLeft("!");
-                    tree_stack.push_back(pairBO(curr_tree, token));
-                    curr_tree = curr_tree->getLeft()->createLeft("");
-                } else if (token == "load") {
-                    // Handle inline load
-                    if ((token = getNextToken()) != "(") {
-                        throw SyntaxError("Got token " + token +
-                                          " after function call");
-                    }
-                    curr_tree->createLeft("load");
-                    token = getNextToken("", false, true);
-                    if (token == "") {
-                        throw SyntaxError("Failed to detect filename.");
-                    }
-                    if (getNextToken() != ")") {
-                        throw SyntaxError("Token after " + token);
-                    }
-                    curr_tree->getLeft()->createLeft(token);
-                } else if (*type == TokenType::GRAPH_LITERAL ||
-                           *type == TokenType::GRAPH_NAME) {
-                    string tmp_token = getNextToken("", true);
-                    if (tmp_token != "" and tree_stack.back().second == "" and
-                        BIN_OPERATORS.find(tmp_token) != BIN_OPERATORS.end()) {
-                        curr_tree->set(tmp_token);
-                        curr_tree->createLeft(token);
-                        // curr_tree->createRight("");
-                        curr_tree = curr_tree->createRight("");
-                        getNextToken();
-                    } else {
-                        curr_tree->set(token);
-                        if (tree_stack.size() == 0) {
-                            throw SyntaxError("Failed to parse line after " +
-                                              token);
-                        }
-                        curr_tree = tree_stack.back().first;
-                        tree_stack.pop_back();
-                    }
-                } else {
-                    throw SyntaxError("Token: " + token);
-                }
-                break;
-            // Read left `load` arg
-            case Stage::LOAD_ARG:
-                // TODO: Verify func left arg. Probably just a var name
+        if (token == "(") {
+            if (curr_tree == tree_root) {
+                throw SyntaxError("Command cannot start with braces.");
+            }
+            curr_tree->createLeft("");
+            tree_stack.push_back(pairBO(curr_tree, ""));
+            curr_tree = curr_tree->getLeft();
+        } else if (token == ")") {
+            // if (tree_stack.back().first == tree_root) {
+            if (curr_tree == tree_root) {
+                throw SyntaxError("Matching openning bracket not detected.");
+            }
+            if (tree_stack.size() == 0) {
+                throw SyntaxError("Failed to parse line from: " + token);
+            }
+            curr_tree = tree_stack.back().first;
+            tree_stack.pop_back();
+        } else if (BIN_OPERATORS.find(token) != BIN_OPERATORS.end()) {
+            // Handle binary operators
+            curr_tree->set(token);
+            tree_stack.push_back(pairBO(curr_tree->createRight(""), ""));
+            curr_tree = curr_tree->getRight();
+        } else if (UNARY_OPERATORS.find(token) != UNARY_OPERATORS.end()) {
+            // Handle unary operatorsUNARY_OPERATORS.end()) {
+            // Handle unary operators
+            curr_tree->createLeft("!");
+            tree_stack.push_back(pairBO(curr_tree, token));
+            curr_tree = curr_tree->getLeft()->createLeft("");
+        } else if (token == "load") {
+            // Handle inline load
+            if ((token = getNextToken()) != "(") {
+                throw SyntaxError("Got token " + token +
+                                  " after function call");
+            }
+            curr_tree->createLeft("load");
+            token = getNextToken("", false, true);
+            if (token == "") {
+                throw SyntaxError("Failed to detect filename.");
+            }
+            if (getNextToken() != ")") {
+                throw SyntaxError("Token after " + token);
+            }
+            curr_tree->getLeft()->createLeft(token);
+        } else if (*type == TokenType::GRAPH_LITERAL ||
+                   *type == TokenType::GRAPH_NAME) {
+            string tmp_token = getNextToken("", true);
+            if (tmp_token != "" and tree_stack.back().second == "" and
+                BIN_OPERATORS.find(tmp_token) != BIN_OPERATORS.end()) {
+                curr_tree->set(tmp_token);
+                curr_tree->createLeft(token);
+                // curr_tree->createRight("");
+                curr_tree = curr_tree->createRight("");
+                getNextToken();
+            } else {
                 curr_tree->set(token);
+                if (tree_stack.size() == 0) {
+                    throw SyntaxError("Failed to parse line after " + token);
+                }
                 curr_tree = tree_stack.back().first;
                 tree_stack.pop_back();
-                stage = Stage::DEFAULT;
-                if ((token = getNextToken()) != ")") {
-                    throw SyntaxError("Expected \")\" but got " + token +
-                                      " after function call.");
-                }
-                break;
-            default:
-                throw Unknown("Stage unknown.");
+            }
+        } else {
+            throw SyntaxError("Token: " + token);
         }
     }
     if (not tree_root->isLeaf()) {
@@ -260,8 +240,7 @@ string getNextToken(const string &line, bool peak, bool expect_filename,
         int startpos = tmp_pos;
         string match = extractGraphLiteralToken(cur_line.substr(startpos));
         if (match == "") {
-            throw SyntaxError("Graph literal format at pos " +
-                              std::to_string(tmp_pos) + ": " +
+            throw SyntaxError("Graph literal format: " +
                               cur_line.substr(startpos));
         }
         if (not peak) pos = tmp_pos + match.length();
@@ -287,9 +266,7 @@ string getNextToken(const string &line, bool peak, bool expect_filename,
     }
     // Unknown token type
     else {
-        throw SyntaxError("Unknown token type at pos " +
-                          std::to_string(tmp_pos) + ": " +
-                          cur_line.substr(tmp_pos));
+        throw SyntaxError("Unknown token type: " + cur_line.substr(tmp_pos));
     }
 }
 
