@@ -8,7 +8,7 @@ class GraphCalc {
     StorageManager storage;
 
    public:
-   void runCmd(std::string command);
+    bool runCmd(std::string command);
 };
 }  // namespace GraphCalc
 #endif

@@ -15,7 +15,9 @@ int calcRunner(std::istream &is, std::ostream &os, bool interactive) {
         }
         std::getline(is, line);
         try {
-            calc.runCmd(line);
+            if (not calc.runCmd(line)) {
+                break;
+            }
         } catch (const GraphCalcError &exp) {
             os << exp.what() << std::endl;
         } catch (const std::exception &exp) {
