@@ -1,10 +1,35 @@
-/* Graph.i SWIG interface file */
-%module example 
+/* graph.i SWIG interface file */
+%module Graph 
 %{
 #define SWIG_FILE_WITH_INIT
-    /* Put header files here or function declarations like below */
 #include "GraphSwig.h"
 #include "Exceptions.h"
+static PyObject* pGraphCalcError;
 %}
 
-GraphCalc::Graph *create();
+
+%init %{
+    pGraphCalcError = PyErr_NewException("_Graph.GraphCalcError", NULL, NULL);
+    Py_INCREF(pGraphCalcError);
+    PyModule_AddObject(m, "GraphCalcError", pGraphCalcError);
+%}
+
+%exception {
+    try {
+        $action
+    } catch (GraphCalc::GraphCalcError &e) {
+        PyErr_SetString(pGraphCalcError, const_cast<char*>(e.what()));
+        SWIG_fail;
+    }
+}
+
+
+%pythoncode %{
+    GraphCalcError = _Graph.GraphCalcError
+%}
+
+%include "GraphSwig.h"
+%include "Exceptions.h"
+
+
+// extern void create();

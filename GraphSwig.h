@@ -3,6 +3,7 @@
 
 #include "Graph.h"
 
+// extern void create();
 GraphCalc::Graph *create();
 GraphCalc::Graph *create();
 void disp(GraphCalc::Graph *graph);

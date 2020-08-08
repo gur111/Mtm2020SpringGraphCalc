@@ -1,6 +1,11 @@
 #include "GraphSwig.h"
 
-namespace GraphCalc {
+#include <iostream>
+
+using namespace GraphCalc;
+
+// namespace GraphCalc {
+// void create() { std::cout << "Hello world!" << std::endl; }
 Graph *create() { return new Graph(); }
 
 void disp(Graph *graph) { std::cout << *graph; }
@@ -41,4 +46,4 @@ Graph *graphComplement(Graph *graph_in, Graph *graph_out) {
     *graph_out = !*graph_in;
     return graph_out;
 }
-}  // namespace GraphCalc
+// }  // namespace GraphCalc
