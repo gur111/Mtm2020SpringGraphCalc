@@ -12,8 +12,10 @@ using std::string;
 namespace GraphCalc {
 shared_ptr<Graph> executeTree(StorageManager &storage,
                               shared_ptr<BinTree> tree) {
-    if (tree->get() == "load" or
-        UNARY_OPERATORS.find(tree->get()) != UNARY_OPERATORS.end()) {
+    if (tree->get() == "") {
+        return nullptr;
+    } else if (tree->get() == "load" or
+               UNARY_OPERATORS.find(tree->get()) != UNARY_OPERATORS.end()) {
         if (tree->getRight() != nullptr) {
             throw InvalidFormat("Unary operator has right argument.");
         }
