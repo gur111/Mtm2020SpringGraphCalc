@@ -40,7 +40,8 @@ shared_ptr<Graph> executeTree(StorageManager &storage,
         }
     } else if (BIN_OPERATORS.find(tree->get()) != BIN_OPERATORS.end()) {
         if (tree->getLeft() == nullptr or tree->getRight() == nullptr) {
-            throw InvalidFormat("Binary operator missing operand.");
+            throw InvalidFormat("Binary operator \"" + tree->get() +
+                                "\" missing operand.");
         }
         shared_ptr<Graph> graphR = executeTree(storage, tree->getRight());
         if (graphR == nullptr) {
