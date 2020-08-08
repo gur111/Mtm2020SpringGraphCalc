@@ -51,7 +51,7 @@ set<T> operator^(const set<T>& a, const set<T>& b) {
 }
 
 void Graph::addNodes(string nodes_literal) {
-    unsigned int next_delim_pos, delim_pos = 0;
+    size_t next_delim_pos, delim_pos = 0;
     while ((next_delim_pos = nodes_literal.substr(delim_pos).find(",")) !=
            string::npos) {
         addNode(nodes_literal.substr(delim_pos, next_delim_pos));
@@ -61,7 +61,7 @@ void Graph::addNodes(string nodes_literal) {
 }
 
 void Graph::addEdge(string edge_literal) {
-    unsigned int nodes_delim;
+    size_t nodes_delim;
     if ((nodes_delim = edge_literal.find(",")) == string::npos) {
         throw InvalidFormat("The edge \"" + edge_literal +
                             "\" is in an invalid format.");
@@ -74,7 +74,7 @@ void Graph::addEdge(string edge_literal) {
 
 void Graph::addEdges(string edges_literal) {
     // Add edges
-    unsigned int next_delim_pos, delim_pos = edges_literal.find("<");
+    size_t next_delim_pos, delim_pos = edges_literal.find("<");
     if (delim_pos == string::npos) {
         throw InvalidFormat("In: " + edges_literal + ".");
     }
@@ -89,7 +89,7 @@ void Graph::addEdges(string edges_literal) {
 }
 
 Graph::Graph(std::string literal) {
-    unsigned int delim_pos = literal.find("|");
+    size_t delim_pos = literal.find("|");
     string nodes_literal;
     string edges_literal;
     // Split string into the edges and nodes parts

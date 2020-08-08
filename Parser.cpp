@@ -64,7 +64,7 @@ shared_ptr<BinTree> parseLine(const string &line) {
         string first_param =
             extractFuncParams(line) + ")";  // Must have ")" to detect filename
 
-        unsigned int comma_pos = first_param.rfind(",");
+        size_t comma_pos = first_param.rfind(",");
         if (comma_pos == string::npos) {
             throw SyntaxError("Missing comma.");
         }
