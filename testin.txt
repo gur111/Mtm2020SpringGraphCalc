@@ -1,8 +1,0 @@
-G1 = G2 + G3 + (G4*((G5-G6))-G7)
-G1 = G2 + G3 + (G4*((G5-G6))--G7)
-G1 = load(quit)
-save(G1, quit)
-save(quit, filename)
-G1 = !G3+G2
-
-string command = "G1 = {xxx | ...}"
