@@ -2,6 +2,7 @@
 
 #include <regex>
 
+#include "Constants.h"
 #include "Exceptions.h"
 
 using std::shared_ptr;
@@ -22,6 +23,21 @@ string extractGraphLiteralToken(const string &subline) {
         return "";
     }
     return matches[0];
+}
+
+bool isValidGraphName(const string &name) {
+    if (RESERVED_WORDS.find(name) != RESERVED_WORDS.end()) {
+        return false;
+    }
+
+    std::smatch matches;
+    string name_prefix = "([A-z])";
+    string name_chars = "[A-z0-9]";
+    std::regex name_regex("^(" + name_prefix + name_chars + "*)$");
+    if (not std::regex_search(name, matches, name_regex)) {
+        return false;
+    }
+    return true;
 }
 
 void sanitizeGraphLiteralToken(string &token) {

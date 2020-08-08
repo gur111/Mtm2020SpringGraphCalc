@@ -32,8 +32,9 @@ shared_ptr<BinTree> parseLine(const string &line) {
     tree_stack.push_back(pairBO(curr_tree, ""));
     string token;
     Stage stage = Stage::DEFAULT;
+    shared_ptr<TokenType> type(new TokenType());
 
-    getNextToken(line);
+    getNextToken(line, false, false, type);
 
     string tmp_token = getNextToken("", true);
 
@@ -42,12 +43,12 @@ shared_ptr<BinTree> parseLine(const string &line) {
         tree_stack.pop_back();
         tree_stack.push_back(
             pairBO((curr_tree = curr_tree->createLeft("")), ""));
-        getNextToken(extractFuncParams(line));
+        getNextToken(extractFuncParams(line), false, false, type);
     } else if (tmp_token == "delete") {
         curr_tree->set(tmp_token);
         tmp_token = extractFuncParams(line);
         curr_tree->createLeft(tmp_token);
-        getNextToken(tmp_token);
+        getNextToken(tmp_token, false, false, type);
         getNextToken();  // Discard first token (we already have it)
         // Make sure only one parameter
         if ((tmp_token = getNextToken()) != "") {
@@ -66,7 +67,7 @@ shared_ptr<BinTree> parseLine(const string &line) {
             throw SyntaxError("Missing comma.");
         }
         // tmp_token[comma_pos] = '+';  // Replace comma with an operator
-        getNextToken(first_param.substr(comma_pos + 1));
+        getNextToken(first_param.substr(comma_pos + 1), false, false, type);
         token = getNextToken("", false, true);
         if (token == "") {
             throw SyntaxError("Failed to detect filename.");
@@ -87,14 +88,14 @@ shared_ptr<BinTree> parseLine(const string &line) {
         // treeRunner so might not actually be needed here
         tree_stack.push_back(pairBO(curr_tree->createLeft(""), ""));
         curr_tree = curr_tree->getLeft();
-        getNextToken(first_param.substr(0, comma_pos));
+        getNextToken(first_param.substr(0, comma_pos), false, false, type);
     } else if (tmp_token == "who" or tmp_token == "quit" or
                tmp_token == "reset") {
         // Now read it for realsies
         curr_tree->set(getNextToken());
         // Make sure no more tokens
-        if (getNextToken() != "") {
-            throw SyntaxError("Unexpected:" + tmp_token + " after command");
+        if ((tmp_token = getNextToken()) != "") {
+            throw SyntaxError("Unexpected: " + tmp_token + " after command");
         }
         return tree_root;
     }
@@ -128,6 +129,7 @@ shared_ptr<BinTree> parseLine(const string &line) {
                     curr_tree = curr_tree->getRight();
                 } else if (UNARY_OPERATORS.find(token) !=
                            UNARY_OPERATORS.end()) {
+                    // Handle unary operatorsUNARY_OPERATORS.end()) {
                     // Handle unary operators
                     curr_tree->createLeft("!");
                     tree_stack.push_back(pairBO(curr_tree, token));
@@ -144,10 +146,11 @@ shared_ptr<BinTree> parseLine(const string &line) {
                         throw SyntaxError("Failed to detect filename.");
                     }
                     if (getNextToken() != ")") {
-                        throw SyntaxError("Invalid token after " + token);
+                        throw SyntaxError("Token after " + token);
                     }
                     curr_tree->getLeft()->createLeft(token);
-                } else {
+                } else if (*type == TokenType::GRAPH_LITERAL ||
+                           *type == TokenType::GRAPH_NAME) {
                     string tmp_token = getNextToken("", true);
                     if (tmp_token != "" and tree_stack.back().second == "" and
                         BIN_OPERATORS.find(tmp_token) != BIN_OPERATORS.end()) {
@@ -165,6 +168,8 @@ shared_ptr<BinTree> parseLine(const string &line) {
                         curr_tree = tree_stack.back().first;
                         tree_stack.pop_back();
                     }
+                } else {
+                    throw SyntaxError("Token: " + token);
                 }
                 break;
             // Read left `load` arg
@@ -193,14 +198,11 @@ shared_ptr<BinTree> parseLine(const string &line) {
     return tree_root;
 }
 
-bool isNodeNameLegal(const string &name) {
-    // TODO: Implement
-    return true;
-}
-
-string getNextToken(const string &line, bool peak, bool expect_filename) {
+string getNextToken(const string &line, bool peak, bool expect_filename,
+                    shared_ptr<TokenType> tok_type) {
     static string cur_line;
     static int pos = 0;
+    static shared_ptr<TokenType> type;
     const string single_char_tokens = "()!*-+^=";
 
     int tmp_pos = pos;
@@ -210,6 +212,7 @@ string getNextToken(const string &line, bool peak, bool expect_filename) {
         // Only init. Don't return any tokens
         pos = 0;
         cur_line = line;
+        type = tok_type;
         return "";
     }
 
@@ -236,6 +239,9 @@ string getNextToken(const string &line, bool peak, bool expect_filename) {
             }
         }
         if (not peak) pos = tmp_pos;
+        if (type != nullptr) {
+            *type = TokenType::FILENAME;
+        }
         return cur_line.substr(startpos, tmp_pos - startpos);
     }
 
@@ -243,6 +249,9 @@ string getNextToken(const string &line, bool peak, bool expect_filename) {
     if (single_char_tokens.find(cur_line[tmp_pos]) != string::npos) {
         tmp_pos++;
         if (not peak) pos = tmp_pos;
+        if (type != nullptr) {
+            *type = TokenType::SINGLE_TOKEN;
+        }
         return cur_line.substr(tmp_pos - 1, 1);
     }
 
@@ -251,11 +260,15 @@ string getNextToken(const string &line, bool peak, bool expect_filename) {
         int startpos = tmp_pos;
         string match = extractGraphLiteralToken(cur_line.substr(startpos));
         if (match == "") {
-            throw SyntaxError("Invalid graph literal format at char: " +
-                              tmp_pos);
+            throw SyntaxError("Graph literal format at pos " +
+                              std::to_string(tmp_pos) + ": " +
+                              cur_line.substr(startpos));
         }
         if (not peak) pos = tmp_pos + match.length();
         sanitizeGraphLiteralToken(match);
+        if (type != nullptr) {
+            *type = TokenType::GRAPH_LITERAL;
+        }
         /*Return the sanitized token */
         return match;
     }
@@ -266,11 +279,17 @@ string getNextToken(const string &line, bool peak, bool expect_filename) {
         while (isalnum(cur_line[++tmp_pos]))
             ;
         if (not peak) pos = tmp_pos;
+        if (type != nullptr and
+            isValidGraphName(cur_line.substr(startpos, tmp_pos - startpos))) {
+            *type = TokenType::GRAPH_NAME;
+        }
         return cur_line.substr(startpos, tmp_pos - startpos);
     }
     // Unknown token type
     else {
-        throw Unknown("Unknown token type at pos: " + tmp_pos);
+        throw SyntaxError("Unknown token type at pos " +
+                          std::to_string(tmp_pos) + ": " +
+                          cur_line.substr(tmp_pos));
     }
 }
 
