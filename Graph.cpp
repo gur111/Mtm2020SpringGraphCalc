@@ -231,8 +231,13 @@ void Graph::readNode(std::ifstream& ifs, char*& name, unsigned int& max_size) {
 std::shared_ptr<Graph> Graph::loadFromFile(std::string filename) {
     shared_ptr<Graph> graph(new Graph());
     std::ifstream infile;
+    infile.open(filename, std::ios_base::binary | std::ifstream::in);
+    if (not infile.is_open() || infile.bad() || infile.fail()) {
+        // Naughty bad
+        throw Unknown("Failed to open file " + filename + ". " +
+                      strerror(errno));
+    }
     infile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-    infile.open(filename, std::ios_base::binary);
     unsigned int node_count, edge_count;
     // Get nodes and edges count
     infile.read((char*)&node_count, sizeof(node_count));
@@ -262,8 +267,13 @@ std::shared_ptr<Graph> Graph::loadFromFile(std::string filename) {
 
 void Graph::saveToFile(std::string filename) const {
     std::ofstream outfile;
-    outfile.exceptions(std::ofstream::failbit | std::ofstream::badbit);
     outfile.open(filename, std::ios_base::binary);
+    if (not outfile.is_open() || outfile.bad() || outfile.fail()) {
+        // Naughty bad
+        throw Unknown("Save to file " + filename + " failed. " +
+                      strerror(errno) + ". Probably the path is invalid.");
+    }
+    outfile.exceptions(std::ofstream::failbit | std::ofstream::badbit);
     // Node count
     unsigned int tmp_num = nodes.size();
     outfile.write((const char*)&tmp_num, sizeof(tmp_num));
