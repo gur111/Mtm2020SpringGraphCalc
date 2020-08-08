@@ -56,6 +56,8 @@ class Graph {
     static std::string pairNodes(const std::string& a, const std::string& b);
 
     friend std::ostream& operator<<(std::ostream& os, const Graph& graph);
+    void addNode(std::string node);
+    void addEdge(std::string node1, std::string node2);
 };
 }  // namespace GraphCalc
 #endif

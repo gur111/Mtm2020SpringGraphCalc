@@ -7,9 +7,9 @@
 namespace GraphCalc {
 
 class BinTree {
-    std::string value;
     std::shared_ptr<BinTree> left;
     std::shared_ptr<BinTree> right;
+    std::string value;
 
    public:
     /**

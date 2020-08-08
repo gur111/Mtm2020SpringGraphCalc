@@ -27,6 +27,6 @@ int main(int argc, char *argv[]) {
         infile.close();
         outfile.close();
     } else {
-        cout << "Error: Invalid cmdline arguments" << endl;
+        cerr << "Error: Invalid cmdline arguments" << endl;
     }
 }

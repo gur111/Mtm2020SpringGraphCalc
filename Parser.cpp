@@ -25,13 +25,11 @@ namespace GraphCalc {
 shared_ptr<BinTree> parseLine(const string &line) {
     /* This will parse a line of input with an algorithm based on the
      Shunting-yard algorithm and a parse/syntax tree concept */
-    enum class Stage { DEFAULT, LOAD_ARG, LOAD_ARG_R };
     shared_ptr<BinTree> tree_root(new BinTree(""));
     vector<pairBO> tree_stack;
     shared_ptr<BinTree> curr_tree = tree_root;
     tree_stack.push_back(pairBO(curr_tree, ""));
     string token;
-    Stage stage = Stage::DEFAULT;
     shared_ptr<TokenType> type(new TokenType());
 
     if (not areBracesBalanced(line)) {
@@ -66,7 +64,7 @@ shared_ptr<BinTree> parseLine(const string &line) {
         string first_param =
             extractFuncParams(line) + ")";  // Must have ")" to detect filename
 
-        int comma_pos = first_param.rfind(",");
+        unsigned int comma_pos = first_param.rfind(",");
         if (comma_pos == string::npos) {
             throw SyntaxError("Missing comma.");
         }
@@ -270,4 +268,4 @@ string getNextToken(const string &line, bool peak, bool expect_filename,
     }
 }
 
-};  // namespace GraphCalc
+}  // namespace GraphCalc

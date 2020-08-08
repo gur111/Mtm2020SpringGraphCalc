@@ -89,7 +89,6 @@ INSTANTIATE_TEST_CASE_P(
     FullCalcInputFileTest::PrintToStringParamName());
 
 TEST(FullCalcValid, BasicLiteralRead) {
-    char str[] = "G1={x1,x2,x3|<x1,x2>,<x3,x2>,<x2,x1>,<x3,x1>}";
     std::istringstream is(
         "G1={x1,x2,x3|<x1,x2>,<x3,x2>,<x2,x1>,<x3,x1>}"
         "\nG2 = !{x1,x3}"
@@ -127,6 +126,7 @@ TEST(FullCalcValid, BasicLiteralRead) {
     std::cin.rdbuf(is.rdbuf());
     calcRunner(std::cin, std::cout, false);
     std::cout.rdbuf(cout_bu);
+    std::cin.rdbuf(cin_bu);
     ASSERT_EQ(expected, os.str());
 }
 

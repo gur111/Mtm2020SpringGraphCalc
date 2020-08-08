@@ -27,7 +27,7 @@ string extractGraphLiteralToken(const string &subline) {
 }
 bool areBracesBalanced(const string &line) {
     vector<char> braces_stack;
-    for (int i = 0; i < line.length(); i++) {
+    for (unsigned int i = 0; i < line.length(); i++) {
         switch (line[i]) {
             case '(':
             case '{':

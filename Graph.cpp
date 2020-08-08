@@ -51,26 +51,17 @@ set<T> operator^(const set<T>& a, const set<T>& b) {
 }
 
 void Graph::addNodes(string nodes_literal) {
-    int next_delim_pos, delim_pos = 0;
-    string node;
+    unsigned int next_delim_pos, delim_pos = 0;
     while ((next_delim_pos = nodes_literal.substr(delim_pos).find(",")) !=
            string::npos) {
-        node = nodes_literal.substr(delim_pos, next_delim_pos);
-        if (nodes.find(node) != nodes.end()) {
-            throw MultipleDeclarations(node + " has already been declared.");
-        }
-        nodes.insert(node);
+        addNode(nodes_literal.substr(delim_pos, next_delim_pos));
         delim_pos += next_delim_pos + 1;
     }
-    node = nodes_literal.substr(delim_pos);
-    if (nodes.find(node) != nodes.end()) {
-        throw MultipleDeclarations(node + " has already been declared.");
-    }
-    nodes.insert(node);
+    addNode(nodes_literal.substr(delim_pos));
 }
 
 void Graph::addEdge(string edge_literal) {
-    int nodes_delim;
+    unsigned int nodes_delim;
     if ((nodes_delim = edge_literal.find(",")) == string::npos) {
         throw InvalidFormat("The edge \"" + edge_literal +
                             "\" is in an invalid format.");
@@ -78,22 +69,12 @@ void Graph::addEdge(string edge_literal) {
     string first = edge_literal.substr(0, nodes_delim);
     string second = edge_literal.substr(nodes_delim + 1);
 
-    if (nodes.find(first) == nodes.end()) {
-        throw Missing("The node: " + first + ".");
-    } else if (nodes.find(second) == nodes.end()) {
-        throw Missing("The node: " + second + ".");
-    } else if (first == second) {
-        throw InvalidFormat("In " + edge_literal + " Self loops not allowed.");
-    } else if (edges[first].find(second) != edges[first].end()) {
-        throw InvalidFormat("In " + edge_literal +
-                            " Parallel edges not allowed.");
-    }
-    edges[first] += second;
+    addEdge(first, second);
 }
 
 void Graph::addEdges(string edges_literal) {
     // Add edges
-    int next_delim_pos, delim_pos = edges_literal.find("<");
+    unsigned int next_delim_pos, delim_pos = edges_literal.find("<");
     if (delim_pos == string::npos) {
         throw InvalidFormat("In: " + edges_literal + ".");
     }
@@ -108,7 +89,7 @@ void Graph::addEdges(string edges_literal) {
 }
 
 Graph::Graph(std::string literal) {
-    int delim_pos = literal.find("|");
+    unsigned int delim_pos = literal.find("|");
     string nodes_literal;
     string edges_literal;
     // Split string into the edges and nodes parts
@@ -257,17 +238,16 @@ std::shared_ptr<Graph> Graph::loadFromFile(std::string filename) {
     infile.read((char*)&node_count, sizeof(node_count));
     infile.read((char*)&edge_count, sizeof(edge_count));
     // Alocate space for a temp node names variable
-    unsigned int name_size;
     unsigned int name_max_size = DEFAULT_NAME_SIZE;
     char* name = new char[name_max_size];
     // Load nodes
-    for (int i = 0; i < node_count; i++) {
+    for (unsigned int i = 0; i < node_count; i++) {
         readNode(infile, name, name_max_size);
         graph->nodes += string(name);
     }
     // Load edges
     string snode;
-    for (int i = 0; i < edge_count; i++) {
+    for (unsigned int i = 0; i < edge_count; i++) {
         // src node
         readNode(infile, name, name_max_size);
         snode = name;
@@ -322,4 +302,29 @@ std::ostream& operator<<(std::ostream& os, const Graph& graph) {
     }
     return os;
 }
+
+void Graph::addNode(std::string node) {
+    // TODO: Verify valid node name
+
+    if (nodes.find(node) != nodes.end()) {
+        throw MultipleDeclarations(node + " has already been declared.");
+    }
+    nodes.insert(node);
+}
+
+void Graph::addEdge(string node1, string node2) {
+    if (nodes.find(node1) == nodes.end()) {
+        throw Missing("The node: " + node1 + ".");
+    } else if (nodes.find(node2) == nodes.end()) {
+        throw Missing("The node: " + node2 + ".");
+    } else if (node1 == node2) {
+        throw InvalidFormat("In <" + node1 + "," + node2 +
+                            "> Self loops not allowed.");
+    } else if (edges[node1].find(node2) != edges[node1].end()) {
+        throw InvalidFormat("In <" + node1 + "," + node2 +
+                            "> Parallel edges not allowed.");
+    }
+    edges[node1] += node2;
+}
+
 }  // namespace GraphCalc
