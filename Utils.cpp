@@ -73,6 +73,16 @@ void sanitizeGraphLiteralToken(string &token) {
     token.erase(remove_if(token.begin(), token.end(), isspace), token.end());
 }
 
+string trim(const string &token) {
+    string delims = "\t ";
+    size_t begin_pos = token.find_first_not_of(delims);
+    if (begin_pos == std::string::npos) {
+        return "";
+    }
+
+    return token.substr(begin_pos,
+                        token.find_last_not_of(delims) - begin_pos + 1);
+}
 string extractFuncParams(string command, bool start_to_end) {
     std::smatch matches;
     string base_exp = "[A-z]*\\s*\\(.*\\)\\s*";

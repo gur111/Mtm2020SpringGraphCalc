@@ -9,6 +9,7 @@ void sanitizeGraphLiteralToken(std::string &token);
 std::string extractFuncParams(std::string command, bool start_to_end = true);
 bool isValidGraphName(const std::string &name);
 bool areBracesBalanced(const std::string &line);
+std::string trim(const std::string &token);
 }  // namespace GraphCalc
 
 #endif
