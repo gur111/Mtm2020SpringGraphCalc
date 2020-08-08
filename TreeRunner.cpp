@@ -40,7 +40,6 @@ shared_ptr<Graph> executeTree(StorageManager &storage,
         if (tree->getLeft() == nullptr or tree->getRight() == nullptr) {
             throw InvalidFormat("Binary operator missing operand.");
         }
-        std::cout << tree;  // TODO: Remove
         shared_ptr<Graph> graphR = executeTree(storage, tree->getRight());
         if (graphR == nullptr) {
             throw InvalidFormat("Sub expressions has a null value.");
