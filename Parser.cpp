@@ -51,36 +51,36 @@ shared_ptr<BinTree> parseLine(const string &line) {
         getNextToken();  // Discard first token (we already have it)
         // Make sure only one parameter
         if ((tmp_token = getNextToken()) != "") {
-            throw InvalidFormat("Unexpected: " + tmp_token +
-                                " in \"delete\" command.");
+            throw SyntaxError("Unexpected: " + tmp_token +
+                              " in \"delete\" command.");
         }
         return tree_root;
     } else if (tmp_token == "save") {
         curr_tree->set(tmp_token);
         tree_stack.pop_back();
-        string first_param = extractFuncParams(line) + ")";  // Must have ")" to detect filename
-            
+        string first_param =
+            extractFuncParams(line) + ")";  // Must have ")" to detect filename
+
         int comma_pos = first_param.rfind(",");
         if (comma_pos == string::npos) {
-            throw InvalidFormat("Missing comma.");
+            throw SyntaxError("Missing comma.");
         }
         // tmp_token[comma_pos] = '+';  // Replace comma with an operator
         getNextToken(first_param.substr(comma_pos + 1));
         token = getNextToken("", false, true);
         if (token == "") {
-            throw InvalidFormat("Failed to detect filename.");
+            throw SyntaxError("Failed to detect filename.");
         }
         // Discard ")"
         if ((tmp_token = getNextToken()) != ")") {
-            throw InvalidFormat("Expected \")\" but got \"" + tmp_token +
-                                "\".");
+            throw SyntaxError("Expected \")\" but got \"" + tmp_token + "\".");
         }
         curr_tree->createRight(token);
         // Make sure there's no more data (for example if we had something like
         // this: "save(G1, asdf)G2)")
         if ((tmp_token = getNextToken()) != "") {
-            throw InvalidFormat(tmp_token +
-                                " unexpected after \"save\" function call.");
+            throw SyntaxError(tmp_token +
+                              " unexpected after \"save\" function call.");
         }
 
         // TODO: Validate first arg is a variable name. May be done in the
@@ -94,7 +94,7 @@ shared_ptr<BinTree> parseLine(const string &line) {
         curr_tree->set(getNextToken());
         // Make sure no more tokens
         if (getNextToken() != "") {
-            throw InvalidFormat("Unexpected:" + tmp_token + " after command");
+            throw SyntaxError("Unexpected:" + tmp_token + " after command");
         }
         return tree_root;
     }
@@ -109,9 +109,14 @@ shared_ptr<BinTree> parseLine(const string &line) {
                     tree_stack.push_back(pairBO(curr_tree, ""));
                     curr_tree = curr_tree->getLeft();
                 } else if (token == ")") {
-                    if (tree_stack.back().first == tree_root) {
-                        throw InvalidFormat(
+                    // if (tree_stack.back().first == tree_root) {
+                    if (curr_tree == tree_root) {
+                        throw SyntaxError(
                             "Matching openning bracket not detected.");
+                    }
+                    if (tree_stack.size() == 0) {
+                        throw SyntaxError("Failed to parse line after " +
+                                          token);
                     }
                     curr_tree = tree_stack.back().first;
                     tree_stack.pop_back();
@@ -136,7 +141,7 @@ shared_ptr<BinTree> parseLine(const string &line) {
                     curr_tree->createLeft("load");
                     token = getNextToken("", false, true);
                     if (token == "") {
-                        throw InvalidFormat("Failed to detect filename.");
+                        throw SyntaxError("Failed to detect filename.");
                     }
                     if (getNextToken() != ")") {
                         throw SyntaxError("Invalid token after " + token);
@@ -153,6 +158,10 @@ shared_ptr<BinTree> parseLine(const string &line) {
                         getNextToken();
                     } else {
                         curr_tree->set(token);
+                        if (tree_stack.size() == 0) {
+                            throw SyntaxError("Failed to parse line after " +
+                                              token);
+                        }
                         curr_tree = tree_stack.back().first;
                         tree_stack.pop_back();
                     }
@@ -174,11 +183,13 @@ shared_ptr<BinTree> parseLine(const string &line) {
                 throw Unknown("Stage unknown.");
         }
     }
-    if (tree_stack.size() > 1) {
-        throw SyntaxError("Braces unbalanced.");
+    if (not tree_root->isLeaf()) {
+        if (tree_root->get() == "") {
+            throw SyntaxError("Unknown syntax.");
+        }
+        tree_root->cleanup();
     }
-    tree_root->cleanup();
-    cout << tree_root;
+
     return tree_root;
 }
 
@@ -218,10 +229,10 @@ string getNextToken(const string &line, bool peak, bool expect_filename) {
         int startpos = tmp_pos;
         while (cur_line[++tmp_pos] != ')') {
             if (cur_line[tmp_pos] == '\0') {
-                throw InvalidFormat("Expected \")\" after filename");
+                throw SyntaxError("Expected \")\" after filename");
             }
-            if (cur_line[tmp_pos] == ',' or cur_line[++tmp_pos] == '(') {
-                throw InvalidFormat("Filename cannot include commas or braces");
+            if (cur_line[tmp_pos] == ',' or cur_line[tmp_pos] == '(') {
+                throw SyntaxError("Filename cannot include commas or braces");
             }
         }
         if (not peak) pos = tmp_pos;
@@ -240,8 +251,8 @@ string getNextToken(const string &line, bool peak, bool expect_filename) {
         int startpos = tmp_pos;
         string match = extractGraphLiteralToken(cur_line.substr(startpos));
         if (match == "") {
-            throw InvalidFormat("invalid graph literal format at char: " +
-                                tmp_pos);
+            throw SyntaxError("Invalid graph literal format at char: " +
+                              tmp_pos);
         }
         if (not peak) pos = tmp_pos + match.length();
         sanitizeGraphLiteralToken(match);
