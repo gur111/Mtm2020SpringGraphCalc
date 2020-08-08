@@ -220,7 +220,7 @@ string getNextToken(const string &line, bool peak, bool expect_filename,
         if (type != nullptr) {
             *type = TokenType::FILENAME;
         }
-        return cur_line.substr(startpos, tmp_pos - startpos);
+        return trim(cur_line.substr(startpos, tmp_pos - startpos));
     }
 
     // Detect single char tokens
