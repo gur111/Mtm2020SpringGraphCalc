@@ -62,7 +62,11 @@ void Graph::addNodes(string nodes_literal) {
         nodes.insert(node);
         delim_pos += next_delim_pos + 1;
     }
-    nodes.insert(nodes_literal.substr(delim_pos));
+    node = nodes_literal.substr(delim_pos);
+    if (nodes.find(node) != nodes.end()) {
+        throw MultipleDeclarations(node + " has already been declared.");
+    }
+    nodes.insert(node);
 }
 
 void Graph::addEdge(string edge_literal) {
