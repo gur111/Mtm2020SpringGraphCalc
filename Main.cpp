@@ -24,6 +24,8 @@ int main(int argc, char *argv[]) {
 
         GraphCalc::calcRunner(infile, outfile, false);
         std::cout.rdbuf(cout_bu);
+        infile.close();
+        outfile.close();
     } else {
         cout << "Error: Invalid cmdline arguments" << endl;
     }
