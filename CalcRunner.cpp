@@ -1,4 +1,6 @@
 
+#include <string.h>
+
 #include "Exceptions.h"
 #include "GraphCalc.h"
 
@@ -13,7 +15,12 @@ int calcRunner(std::istream &is, std::ostream &os, bool interactive) {
         if (interactive) {
             os << "Gcalc> " << flush;
         }
-        std::getline(is, line);
+        try {
+            std::getline(is, line);
+        } catch (const std::exception &exp) {
+            os << "Error: Error reading line. Got: " << exp.what() << "."
+               << std::endl;
+        }
         try {
             if (not calc.runCmd(line)) {
                 break;
@@ -25,5 +32,5 @@ int calcRunner(std::istream &is, std::ostream &os, bool interactive) {
         }
     }
     return 0;
-}  
+}
 }  // namespace GraphCalc
