@@ -25,17 +25,8 @@ string extractGraphLiteralToken(const string &subline) {
     }
     return matches[0];
 }
-bool areBracesBalanced(const string &line, bool is_node_name) {
+bool areBracesBalanced(const string &line, bool is_node_name, FuncStage stage) {
     vector<char> stack;
-    enum FuncStage {
-        NONE,
-        PRE_LOAD_OPEN,
-        PRE_SAVE_OPEN,
-        MID_FILENAME,
-        PRE_COMMA,
-        FIRST_ARG
-    };
-    FuncStage stage = NONE;
     for (unsigned int i = 0; i < line.length(); i++) {
         if (not is_node_name and stage == NONE and
             std::count(stack.begin(), stack.end(), '{') == 0) {
@@ -70,7 +61,7 @@ bool areBracesBalanced(const string &line, bool is_node_name) {
                 if (stage == PRE_LOAD_OPEN) {
                     stage = MID_FILENAME;
                 } else if (stage == PRE_SAVE_OPEN) {
-                    stage = FIRST_ARG;
+                    stage = SAVE_FIRST_ARG;
                 }
                 stack.push_back(line[i]);
                 break;
@@ -105,7 +96,7 @@ bool areBracesBalanced(const string &line, bool is_node_name) {
             case ' ':
                 break;
             default:
-                if (line[i] == ',' and stage == FIRST_ARG) {
+                if (line[i] == ',' and stage == SAVE_FIRST_ARG) {
                     stage = MID_FILENAME;
                     break;
                 }
@@ -165,7 +156,8 @@ string extractFuncParams(string command, bool start_to_end) {
                                               : base_exp);
     if (std::regex_search(command, matches, match_func_format)) {
         int spos = command.find("("), epos = command.rfind(")");
-        return command.substr(spos + 1, epos - spos - 1);
+        string result = command.substr(spos + 1, epos - spos - 1);
+        return result;
     }
     // Format mismatch
     throw SyntaxError("Function call is in an invalid format");

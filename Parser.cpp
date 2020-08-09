@@ -47,7 +47,11 @@ shared_ptr<BinTree> parseLine(string line) {
         tree_stack.pop_back();
         tree_stack.push_back(
             pairBO((curr_tree = curr_tree->createLeft("")), ""));
-        line = addBraces(extractFuncParams(line));
+        line = extractFuncParams(line);
+        if (not areBracesBalanced(line)) {
+            throw SyntaxError("Invalid print parameter: " + line);
+        }
+        line = addBraces(line);
         getNextToken(line, false, false, type);
     } else if (tmp_token == "delete") {
         curr_tree->set(tmp_token);
@@ -153,6 +157,9 @@ shared_ptr<BinTree> parseLine(string line) {
                 getNextToken();
             } else {
                 if (*type == TokenType::FUNCTION_NAME) {
+                    if (token.find("load") != 0) {
+                        throw SyntaxError("Unexpected reserved word: " + token);
+                    }
                     curr_tree->set("load");
                     curr_tree->createLeft(token.substr(5, token.length() - 6));
                 } else {
@@ -281,7 +288,7 @@ string getNextToken(const string &line, bool peak, bool expect_filename,
             }
         }
         if (not peak) pos = tmp_pos;
-        if (type != nullptr) {
+        if (type != nullptr and not peak) {
             *type = TokenType::FILENAME;
         }
         return trim(cur_line.substr(startpos, tmp_pos - startpos));
@@ -291,7 +298,7 @@ string getNextToken(const string &line, bool peak, bool expect_filename,
     if (single_char_tokens.find(cur_line[tmp_pos]) != string::npos) {
         tmp_pos++;
         if (not peak) pos = tmp_pos;
-        if (type != nullptr) {
+        if (type != nullptr and not peak) {
             *type = TokenType::SINGLE_TOKEN;
         }
         return cur_line.substr(tmp_pos - 1, 1);
@@ -307,7 +314,7 @@ string getNextToken(const string &line, bool peak, bool expect_filename,
         }
         if (not peak) pos = tmp_pos + match.length();
         sanitizeGraphLiteralToken(match);
-        if (type != nullptr) {
+        if (type != nullptr and not peak) {
             *type = TokenType::GRAPH_LITERAL;
         }
         /*Return the sanitized token */
@@ -323,30 +330,38 @@ string getNextToken(const string &line, bool peak, bool expect_filename,
 
         string tmp_token = cur_line.substr(startpos, tmp_pos - startpos);
 
+        int backup_pos = pos;
+        pos = tmp_pos;
+
         if (tmp_token == "load") {
-            // TODO: Fix when peak is true
-            if ((tmp_token = getNextToken("", peak)) != "(") {
+            // Don't peak (pos was backed up, will be restored before return)
+            if ((tmp_token = getNextToken("", false)) != "(") {
                 throw SyntaxError("Got token " + tmp_token +
                                   " after function call");
-            } else if ((tmp_token = getNextToken("", peak, true)) == "") {
-                throw SyntaxError("Failed to detect filename.");
-            } else if (getNextToken() != ")") {
+            } else if ((tmp_token = getNextToken("", false, true)) == "") {
+                throw SyntaxError("Failed to detect filename for load.");
+            } else if (getNextToken("", false) != ")") {
                 throw SyntaxError("Token after " + tmp_token);
             }
             tmp_token = "load(" + tmp_token + ")";
-            if (type != nullptr) {
+            if (type != nullptr and not peak) {
                 *type = TokenType::FUNCTION_NAME;
             }
-        } else if (type != nullptr) {
+        } else if (type != nullptr and not peak) {
             if (isValidGraphName(
                     cur_line.substr(startpos, tmp_pos - startpos))) {
                 *type = TokenType::GRAPH_NAME;
             } else if (RESERVED_WORDS.find(tmp_token) != RESERVED_WORDS.end()) {
                 *type = TokenType::FUNCTION_NAME;
             } else {
-                throw Unknown("Unknown token type: " + tmp_token);
+                *type = TokenType::INVALID;
             }
         }
+
+        if (peak) {
+            pos = backup_pos;
+        }
+
         return tmp_token;
     }
     // Unknown token type
