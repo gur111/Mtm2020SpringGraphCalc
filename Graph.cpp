@@ -6,6 +6,7 @@
 #include <iterator>
 #include <regex>
 
+#include "Constants.h"
 #include "Utils.h"
 #define DEFAULT_NAME_SIZE 10
 using std::cout;
@@ -228,6 +229,10 @@ void Graph::readNode(std::ifstream& ifs, char*& name, unsigned int& max_size) {
     }
     name[name_size] = '\0';
     ifs.read(name, name_size);
+
+    if (not isValidNodeName(name)) {
+        throw InvalidFormat("Corrupt binary file.");
+    }
 }
 
 std::shared_ptr<Graph> Graph::loadFromFile(std::string filename) {
@@ -244,6 +249,13 @@ std::shared_ptr<Graph> Graph::loadFromFile(std::string filename) {
     // Get nodes and edges count
     infile.read((char*)&node_count, sizeof(node_count));
     infile.read((char*)&edge_count, sizeof(edge_count));
+    if (node_count + edge_count > MAX_ITEMS_IN_GRAPH) {
+        throw InvalidFormat(
+            "Graph file probably corrupt. Detected " +
+            std::to_string(node_count + edge_count) +
+            " items (nodes+edges). If this is not an error, please increase "
+            "MAX_ITEMS_IN_GRAPH and recompile the software.");
+    }
     // Alocate space for a temp node names variable
     unsigned int name_max_size = DEFAULT_NAME_SIZE;
     char* name = new char[name_max_size];
