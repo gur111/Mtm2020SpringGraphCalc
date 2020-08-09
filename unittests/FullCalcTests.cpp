@@ -65,7 +65,7 @@ TEST_P(FullCalcInputFileTest, TestFiles) {
                                                expected_out.end(), lines_regex);
     auto lines_end = std::sregex_iterator();
     std::sregex_iterator out = out_begin, exp = expected_begin;
-    for (; out != lines_end and exp != lines_end; ++out, ++exp) {
+    for (; out != lines_end or exp != lines_end; ++out, ++exp) {
         ASSERT_TRUE(out != lines_end);
         ASSERT_TRUE(exp != lines_end);
         std::string out_match_str = (*out).str();
