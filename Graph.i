@@ -18,8 +18,11 @@ static PyObject* pGraphCalcError;
     try {
         $action
     } catch (GraphCalc::GraphCalcError &e) {
-        PyErr_SetString(pGraphCalcError, const_cast<char*>(e.what()));
-        SWIG_fail;
+        // This is ugly and stupid imho with all due respect.
+        std::cout << e.what() << std::endl;
+        // Errors should be handled like this:
+        /* PyErr_SetString(pGraphCalcError, const_cast<char*>(e.what()));
+        SWIG_fail; */
     }
 }
 
