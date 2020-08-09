@@ -83,7 +83,8 @@ shared_ptr<Graph> executeTree(StorageManager &storage,
     } else if (tree->get() == "save") {
         // TODO: Verify right is leaf and filename is valid
         if (not tree->getRight()->isLeaf()) {
-            throw InvalidFormat("Invalid second operand for \"save\" function.");
+            throw InvalidFormat(
+                "Invalid second operand for \"save\" function.");
         }
         executeTree(storage, tree->getLeft())
             ->saveToFile(tree->getRight()->get());
@@ -95,7 +96,7 @@ shared_ptr<Graph> executeTree(StorageManager &storage,
     } else if (tree->get() == "who") {
         storage.who();
         return nullptr;
-    } else /* TODO:  if (is valid name/graph literal) */ {
+    } else {
         if (not tree->isLeaf()) {
             throw InvalidFormat("Var-name/graph-literal has a child.");
         }
@@ -103,10 +104,10 @@ shared_ptr<Graph> executeTree(StorageManager &storage,
         if (literal != "") {
             return shared_ptr<Graph>(new Graph(literal));
         } else {
-            if(not isValidGraphName(tree->get())){
-                throw InvalidFormat("Graph name "+tree->get()+" is invalid.");
+            if (not isValidGraphName(tree->get())) {
+                throw InvalidFormat("Graph name " + tree->get() +
+                                    " is invalid.");
             }
-            // TODO: Validate name
             return storage.get(tree->get());
         }
     }
