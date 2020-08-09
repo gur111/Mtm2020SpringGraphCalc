@@ -25,39 +25,97 @@ string extractGraphLiteralToken(const string &subline) {
     }
     return matches[0];
 }
-bool areBracesBalanced(const string &line, bool verify_semicolon) {
-    vector<char> braces_stack;
+bool areBracesBalanced(const string &line, bool is_node_name) {
+    vector<char> stack;
+    enum FuncStage {
+        NONE,
+        PRE_LOAD_OPEN,
+        PRE_SAVE_OPEN,
+        MID_FILENAME,
+        PRE_COMMA,
+        FIRST_ARG
+    };
+    FuncStage stage = NONE;
     for (unsigned int i = 0; i < line.length(); i++) {
+        if (not is_node_name and stage == NONE and
+            std::count(stack.begin(), stack.end(), '{') == 0) {
+            if (line.substr(i).find("load") == 0 or
+                line.substr(i).find("save") == 0) {
+                if (i > 0 and isalnum(line[i - 1])) {
+                    continue;
+                }
+                if (line.find("save") == i) {
+                    stage = PRE_SAVE_OPEN;
+                } else {
+                    stage = PRE_LOAD_OPEN;
+                }
+                i += 3;
+                continue;
+            }
+        }
         switch (line[i]) {
-            case '(':
             case '{':
+                if (std::count(stack.begin(), stack.end(), '{') != 0) {
+                    throw SyntaxError(
+                        "Only one level of curly braces is allowed.");
+                }
             case '[':
-                braces_stack.push_back(line[i]);
-                break;
-            case ')':
-                if (braces_stack.size() == 0 or braces_stack.back() != '(') {
+                // Ignore mid filename
+                if (stage == MID_FILENAME) {
+                    break;
+                } else if (stage == PRE_LOAD_OPEN or stage == PRE_SAVE_OPEN) {
                     return false;
                 }
-                braces_stack.pop_back();
+            case '(':
+                if (stage == PRE_LOAD_OPEN) {
+                    stage = MID_FILENAME;
+                } else if (stage == PRE_SAVE_OPEN) {
+                    stage = FIRST_ARG;
+                }
+                stack.push_back(line[i]);
+                break;
+            case ')':
+                if (stage == MID_FILENAME) {
+                    stage = NONE;
+                }
+                if (stack.size() == 0 or stack.back() != '(') {
+                    return false;
+                }
+                stack.pop_back();
                 break;
             case '}':
             case ']':
-                if (braces_stack.size() == 0 or
-                    line[i] - 2 != braces_stack.back()) {
+                if (stage == MID_FILENAME) {
+                    break;
+                }
+                if (stack.size() == 0 or line[i] - 2 != stack.back()) {
                     return false;
                 }
-                braces_stack.pop_back();
+                stack.pop_back();
                 break;
             case ';':
-                if (verify_semicolon and
-                    find(braces_stack.begin(), braces_stack.end(), '[') ==
-                        braces_stack.end()) {
+                if (stage == MID_FILENAME) {
+                    break;
+                }
+                if (is_node_name and
+                    count(stack.begin(), stack.end(), '[') == 0) {
                     return false;
+                }
+                break;
+            case ' ':
+                break;
+            default:
+                if (line[i] == ',' and stage == FIRST_ARG) {
+                    stage = MID_FILENAME;
+                    break;
+                }
+                if ((stage == PRE_LOAD_OPEN or stage == PRE_SAVE_OPEN)) {
+                    stage = NONE;
                 }
         }
     }
 
-    return braces_stack.size() == 0;
+    return stack.size() == 0;
 }
 
 bool isValidGraphName(const string &name) {

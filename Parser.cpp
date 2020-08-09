@@ -21,8 +21,9 @@ using std::string;
 using std::vector;
 
 namespace GraphCalc {
+string addBraces(string line);
 
-shared_ptr<BinTree> parseLine(const string &line) {
+shared_ptr<BinTree> parseLine(string line) {
     /* This will parse a line of input with an algorithm based on the
      Shunting-yard algorithm and a parse/syntax tree concept */
     shared_ptr<BinTree> tree_root(new BinTree(""));
@@ -33,6 +34,7 @@ shared_ptr<BinTree> parseLine(const string &line) {
     shared_ptr<TokenType> type(new TokenType());
 
     if (not areBracesBalanced(line)) {
+        areBracesBalanced(line);  // TODO: Remove
         throw SyntaxError("Braces unbalanced.");
     }
 
@@ -45,7 +47,8 @@ shared_ptr<BinTree> parseLine(const string &line) {
         tree_stack.pop_back();
         tree_stack.push_back(
             pairBO((curr_tree = curr_tree->createLeft("")), ""));
-        getNextToken(extractFuncParams(line), false, false, type);
+        line = addBraces(extractFuncParams(line));
+        getNextToken(line, false, false, type);
     } else if (tmp_token == "delete") {
         curr_tree->set(tmp_token);
         tmp_token = extractFuncParams(line);
@@ -87,7 +90,9 @@ shared_ptr<BinTree> parseLine(const string &line) {
         }
         tree_stack.push_back(pairBO(curr_tree->createLeft(""), ""));
         curr_tree = curr_tree->getLeft();
-        getNextToken(first_param.substr(0, comma_pos), false, false, type);
+        // Add braces to avoid ambiguity
+        line = addBraces(first_param.substr(0, comma_pos));
+        getNextToken(line, false, false, type);
     } else if (tmp_token == "who" or tmp_token == "quit" or
                tmp_token == "reset") {
         // Now read it for realsies
@@ -97,6 +102,8 @@ shared_ptr<BinTree> parseLine(const string &line) {
             throw SyntaxError("Unexpected: " + tmp_token + " after command.");
         }
         return tree_root;
+    } else {
+        line = addBraces(line);
     }
 
     // Handle mutable expression
@@ -129,33 +136,28 @@ shared_ptr<BinTree> parseLine(const string &line) {
             curr_tree->createLeft("!");
             tree_stack.push_back(pairBO(curr_tree, token));
             curr_tree = curr_tree->getLeft()->createLeft("");
-        } else if (token == "load") {
-            // Handle inline load
-            if ((token = getNextToken()) != "(") {
-                throw SyntaxError("Got token " + token +
-                                  " after function call");
-            }
-            curr_tree->createLeft("load");
-            token = getNextToken("", false, true);
-            if (token == "") {
-                throw SyntaxError("Failed to detect filename.");
-            }
-            if (getNextToken() != ")") {
-                throw SyntaxError("Token after " + token);
-            }
-            curr_tree->getLeft()->createLeft(token);
-        } else if (*type == TokenType::GRAPH_LITERAL ||
-                   *type == TokenType::GRAPH_NAME) {
+        } else if (*type == TokenType::GRAPH_LITERAL or
+                   *type == TokenType::GRAPH_NAME or
+                   *type == TokenType::FUNCTION_NAME) {
             string tmp_token = getNextToken("", true);
             if (tmp_token != "" and tree_stack.back().second == "" and
                 BIN_OPERATORS.find(tmp_token) != BIN_OPERATORS.end()) {
                 curr_tree->set(tmp_token);
-                curr_tree->createLeft(token);
-                // curr_tree->createRight("");
+                if (*type == TokenType::FUNCTION_NAME) {
+                    curr_tree->createLeft("load")->createLeft(
+                        token.substr(5, token.length() - 6));
+                } else {
+                    curr_tree->createLeft(token);
+                }
                 curr_tree = curr_tree->createRight("");
                 getNextToken();
             } else {
-                curr_tree->set(token);
+                if (*type == TokenType::FUNCTION_NAME) {
+                    curr_tree->set("load");
+                    curr_tree->createLeft(token.substr(5, token.length() - 6));
+                } else {
+                    curr_tree->set(token);
+                }
                 if (tree_stack.size() == 0) {
                     throw SyntaxError("Failed to parse line after " + token);
                 }
@@ -174,6 +176,68 @@ shared_ptr<BinTree> parseLine(const string &line) {
     }
 
     return tree_root;
+}
+
+/**
+ * This adds braces to the input line so there's not a sequence of 2 operations
+ * in a row.
+ */
+string addBraces(string line) {
+    vector<char> braces_stack;
+    int braces_count = -1;
+    size_t braces_pos = 0;
+
+    for (size_t i = 0; i < line.length(); i++) {
+        // TODO: Ignore operators while mid filename
+        if (line[i] == '(') {
+            size_t startpos = i;
+            braces_stack.push_back(')');
+            while (braces_stack.size() != 0) {
+                switch (line[++i]) {
+                    case '(':
+                        braces_stack.push_back(')');
+                        break;
+                    case ')':
+                        braces_stack.pop_back();
+                        break;
+                }
+            }
+            string orig_sub = line.substr(startpos + 1, i - startpos - 1);
+            string sub_result = addBraces(orig_sub);
+            line = line.substr(0, startpos + 1) + sub_result + line.substr(i);
+            // We need to advance i by the size we added to the string
+            // (sub_result)
+            if (sub_result.length() - orig_sub.length() < 0) {
+                throw Unknown(
+                    "Unexpected error occured. When adding braces, sub result "
+                    "shorter than original sub string.");
+            }
+            i += sub_result.length() - orig_sub.length();
+        } else if (BIN_OPERATORS.find(string(1, line[i])) !=
+                   BIN_OPERATORS.end()) {
+            if (line[i] == '=') {
+                braces_pos = i + 1;
+                continue;
+            }
+            braces_count++;
+            if (braces_count != 0) {
+                line = line.substr(0, i) + ")" + line.substr(i);
+                // Now we need to advance i to skip the closing brace
+                i++;
+            }
+        } else if (line.find("load") == i and
+                   // and not in curly braces
+                   line.substr(0, i).find_last_of('{') >
+                       line.substr(0, i).find_last_of('}')) {
+            if ((i = line.find(")")) == string::npos) {
+                throw SyntaxError(
+                    "Got weird after load. Expecting \")\" somewhere.");
+            }
+        }
+    }
+    return line.substr(0, braces_pos) +
+           string(braces_count > 0 ? braces_count : 0, '(') +
+           line.substr(braces_pos);
 }
 
 string getNextToken(const string &line, bool peak, bool expect_filename,
@@ -256,11 +320,34 @@ string getNextToken(const string &line, bool peak, bool expect_filename,
         while (isalnum(cur_line[++tmp_pos]))
             ;
         if (not peak) pos = tmp_pos;
-        if (type != nullptr and
-            isValidGraphName(cur_line.substr(startpos, tmp_pos - startpos))) {
-            *type = TokenType::GRAPH_NAME;
+
+        string tmp_token = cur_line.substr(startpos, tmp_pos - startpos);
+
+        if (tmp_token == "load") {
+            // TODO: Fix when peak is true
+            if ((tmp_token = getNextToken("", peak)) != "(") {
+                throw SyntaxError("Got token " + tmp_token +
+                                  " after function call");
+            } else if ((tmp_token = getNextToken("", peak, true)) == "") {
+                throw SyntaxError("Failed to detect filename.");
+            } else if (getNextToken() != ")") {
+                throw SyntaxError("Token after " + tmp_token);
+            }
+            tmp_token = "load(" + tmp_token + ")";
+            if (type != nullptr) {
+                *type = TokenType::FUNCTION_NAME;
+            }
+        } else if (type != nullptr) {
+            if (isValidGraphName(
+                    cur_line.substr(startpos, tmp_pos - startpos))) {
+                *type = TokenType::GRAPH_NAME;
+            } else if (RESERVED_WORDS.find(tmp_token) != RESERVED_WORDS.end()) {
+                *type = TokenType::FUNCTION_NAME;
+            } else {
+                throw Unknown("Unknown token type: " + tmp_token);
+            }
         }
-        return cur_line.substr(startpos, tmp_pos - startpos);
+        return tmp_token;
     }
     // Unknown token type
     else {

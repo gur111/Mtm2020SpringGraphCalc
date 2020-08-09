@@ -14,7 +14,7 @@ enum class TokenType {
     SINGLE_TOKEN,
     FILENAME
 };
-std::shared_ptr<BinTree> parseLine(const std::string &line);
+std::shared_ptr<BinTree> parseLine(std::string line);
 std::string getNextToken(const std::string &line = "", bool peak = false,
                          bool expect_filename = false,
                          std::shared_ptr<TokenType> type = nullptr);
