@@ -144,7 +144,7 @@ INSTANTIATE_TEST_CASE_P(
             {"G1", "=", "!", "(", "G2", "+", "G3", ")", "+", "!", "G4"},
             getNotOnBracesTree()},
         expression_state{"G1=load(filename)",
-                         {"G1", "=", "load", "(", "filename", ")"},
+                         {"G1", "=", "load(filename)"},
                          getBasicLoadTree()},
         expression_state{
             "G1 = {x1, x2, x3 | <x1, x2>, <x3, x2>, <x2,x1>,<x3,x1>}",
@@ -157,24 +157,16 @@ INSTANTIATE_TEST_CASE_P(
              "{x1,x2,x3|<x1,x2>,<x3,"
              "x2>,<x2,x1>,<x3,x1>}"},
             getPlusTwoLiteralsTree()},
-        expression_state{
-            "G1=load(filename)+((G3*G4)^(G5-G6))",
-            {"G1", "=",  "load", "(", "filename", ")",  "+", "(",  "(", "G3",
-             "*",  "G4", ")",    "^", "(",        "G5", "-", "G6", ")", ")"},
-            getDefaultAndLoadTree()},
+        expression_state{"G1=load(filename)+((G3*G4)^(G5-G6))",
+                         {"G1", "=", "load(filename)", "+", "(", "(", "G3", "*",
+                          "G4", ")", "^", "(", "G5", "-", "G6", ")", ")"},
+                         getDefaultAndLoadTree()},
         expression_state{
             "G1=load(filename)+((G3*G4)^({x1,x2,x3|<x1,x2>,<x3,x2>,<x2,x1>,<"
             "x3,x1>}-G6))",
-            {"G1",       "=",
-             "load",     "(",
-             "filename", ")",
-             "+",        "(",
-             "(",        "G3",
-             "*",        "G4",
-             ")",        "^",
-             "(",        "{x1,x2,x3|<x1,x2>,<x3,x2>,<x2,x1>,<x3,x1>}",
-             "-",        "G6",
-             ")",        ")"},
+            {"G1", "=", "load(filename)", "+", "(", "(", "G3", "*", "G4", ")",
+             "^", "(", "{x1,x2,x3|<x1,x2>,<x3,x2>,<x2,x1>,<x3,x1>}", "-", "G6",
+             ")", ")"},
             getDefaultLoadAndLiteralTree()}));
 
 TEST_P(ValidExpressionTest, IntoParseTreeTwice) {
