@@ -44,9 +44,8 @@ TEST_P(FullCalcInputFileTest, TestFiles) {
     auto state = GetParam();
     std::ifstream infile;
     std::ifstream outfile;
-    infile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-    outfile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
     infile.open(state.in_filename, std::ios_base::binary);
+    infile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
     std::ostringstream os;
     std::streambuf *cout_bu;
     cout_bu = std::cout.rdbuf();
@@ -54,9 +53,11 @@ TEST_P(FullCalcInputFileTest, TestFiles) {
     calcRunner(infile, std::cout, false);
     std::cout.rdbuf(cout_bu);
     outfile.open(state.out_filename, std::ios_base::binary);
+    outfile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
     string expected_out((std::istreambuf_iterator<char>(outfile)),
                         std::istreambuf_iterator<char>());
     string output = os.str();
+    outfile.close();
 
     std::regex lines_regex("[^\\n]+");
     auto out_begin =
@@ -65,7 +66,7 @@ TEST_P(FullCalcInputFileTest, TestFiles) {
                                                expected_out.end(), lines_regex);
     auto lines_end = std::sregex_iterator();
     std::sregex_iterator out = out_begin, exp = expected_begin;
-    for (; out != lines_end or exp != lines_end; ++out, ++exp) {
+    for (int i = 1; out != lines_end or exp != lines_end; ++out, ++exp, i++) {
         ASSERT_TRUE(out != lines_end);
         ASSERT_TRUE(exp != lines_end);
         std::string out_match_str = (*out).str();
@@ -85,7 +86,9 @@ INSTANTIATE_TEST_CASE_P(
     testing::Values(files_state{"Dani", "../mtm_final_test/dani_input.txt",
                                 "../mtm_final_test/dani_output.txt"},
                     files_state{"Gur", "../mtm_final_test/gur_input.txt",
-                                "../mtm_final_test/gur_output.txt"}),
+                                "../mtm_final_test/gur_output.txt"},
+                    files_state{"Anonymous", "../mtm_final_test/niv_in.txt",
+                                "../mtm_final_test/niv_out.txt"}),
     FullCalcInputFileTest::PrintToStringParamName());
 
 TEST(FullCalcValid, BasicLiteralRead) {
