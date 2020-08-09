@@ -33,6 +33,3 @@ static PyObject* pGraphCalcError;
 
 %include "GraphSwig.h"
 %include "Exceptions.h"
-
-
-// extern void create();
