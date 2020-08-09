@@ -5,6 +5,8 @@
 #include <iostream>
 #include <iterator>
 #include <regex>
+
+#include "Utils.h"
 #define DEFAULT_NAME_SIZE 10
 using std::cout;
 using std::endl;
@@ -314,8 +316,9 @@ std::ostream& operator<<(std::ostream& os, const Graph& graph) {
 }
 
 void Graph::addNode(std::string node) {
-    // TODO: Verify valid node name
-
+    if (not isValidNodeName(node)) {
+        throw InvalidFormat(node + " is not a valid name for a node.");
+    }
     if (nodes.find(node) != nodes.end()) {
         throw MultipleDeclarations(node + " has already been declared.");
     }
