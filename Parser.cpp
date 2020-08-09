@@ -34,7 +34,6 @@ shared_ptr<BinTree> parseLine(string line) {
     shared_ptr<TokenType> type(new TokenType());
 
     if (not areBracesBalanced(line)) {
-        areBracesBalanced(line);  // TODO: Remove
         throw SyntaxError("Braces unbalanced.");
     }
 
@@ -75,7 +74,6 @@ shared_ptr<BinTree> parseLine(string line) {
         if (comma_pos == string::npos) {
             throw SyntaxError("Missing comma.");
         }
-        // tmp_token[comma_pos] = '+';  // Replace comma with an operator
         getNextToken(first_param.substr(comma_pos + 1), false, false, type);
         token = getNextToken("", false, true);
         if (token == "") {
@@ -108,6 +106,7 @@ shared_ptr<BinTree> parseLine(string line) {
         return tree_root;
     } else {
         line = addBraces(line);
+        getNextToken(line, false, false, type);
     }
 
     // Handle mutable expression
@@ -120,7 +119,6 @@ shared_ptr<BinTree> parseLine(string line) {
             tree_stack.push_back(pairBO(curr_tree, ""));
             curr_tree = curr_tree->getLeft();
         } else if (token == ")") {
-            // if (tree_stack.back().first == tree_root) {
             if (curr_tree == tree_root) {
                 throw SyntaxError("Matching openning bracket not detected.");
             }
@@ -132,14 +130,12 @@ shared_ptr<BinTree> parseLine(string line) {
         } else if (BIN_OPERATORS.find(token) != BIN_OPERATORS.end()) {
             // Handle binary operators
             curr_tree->set(token);
-            tree_stack.push_back(pairBO(curr_tree->createRight(""), ""));
-            curr_tree = curr_tree->getRight();
+            curr_tree = curr_tree->createRight("");
         } else if (UNARY_OPERATORS.find(token) != UNARY_OPERATORS.end()) {
             // Handle unary operatorsUNARY_OPERATORS.end()) {
             // Handle unary operators
-            curr_tree->createLeft("!");
             tree_stack.push_back(pairBO(curr_tree, token));
-            curr_tree = curr_tree->getLeft()->createLeft("");
+            curr_tree = curr_tree->createLeft(token)->createLeft("");
         } else if (*type == TokenType::GRAPH_LITERAL or
                    *type == TokenType::GRAPH_NAME or
                    *type == TokenType::FUNCTION_NAME) {
@@ -168,8 +164,10 @@ shared_ptr<BinTree> parseLine(string line) {
                 if (tree_stack.size() == 0) {
                     throw SyntaxError("Failed to parse line after " + token);
                 }
-                curr_tree = tree_stack.back().first;
-                tree_stack.pop_back();
+                if (tree_stack.back().second != "") {
+                    curr_tree = tree_stack.back().first;
+                    tree_stack.pop_back();
+                }
             }
         } else {
             throw SyntaxError("Token: " + token);
@@ -181,6 +179,10 @@ shared_ptr<BinTree> parseLine(string line) {
         }
         tree_root->cleanup();
     }
+
+    // Uncomment this line to unleash hell (JK, it merely prints the tree in a
+    // very convinient way)
+    // cout << tree_root;
 
     return tree_root;
 }
@@ -279,12 +281,15 @@ string getNextToken(const string &line, bool peak, bool expect_filename,
     // Match filename
     if (expect_filename) {
         int startpos = tmp_pos;
+        if (cur_line[tmp_pos] == ')') {
+            throw Missing("Missing filename.");
+        }
         while (cur_line[++tmp_pos] != ')') {
             if (cur_line[tmp_pos] == '\0') {
-                throw SyntaxError("Expected \")\" after filename");
+                throw SyntaxError("Expected \")\" after filename.");
             }
             if (cur_line[tmp_pos] == ',' or cur_line[tmp_pos] == '(') {
-                throw SyntaxError("Filename cannot include commas or braces");
+                throw SyntaxError("Filename cannot include commas or braces.");
             }
         }
         if (not peak) pos = tmp_pos;
