@@ -1,4 +1,4 @@
-/* graph.i SWIG interface file */
+/* Graph.i SWIG interface file */
 %module Graph 
 %{
 #define SWIG_FILE_WITH_INIT
