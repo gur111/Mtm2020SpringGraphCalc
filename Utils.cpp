@@ -25,7 +25,7 @@ string extractGraphLiteralToken(const string &subline) {
     }
     return matches[0];
 }
-bool areBracesBalanced(const string &line) {
+bool areBracesBalanced(const string &line, bool verify_semicolon) {
     vector<char> braces_stack;
     for (unsigned int i = 0; i < line.length(); i++) {
         switch (line[i]) {
@@ -48,6 +48,12 @@ bool areBracesBalanced(const string &line) {
                 }
                 braces_stack.pop_back();
                 break;
+            case ';':
+                if (verify_semicolon and
+                    find(braces_stack.begin(), braces_stack.end(), '[') ==
+                        braces_stack.end()) {
+                    return false;
+                }
         }
     }
 
@@ -67,6 +73,17 @@ bool isValidGraphName(const string &name) {
         return false;
     }
     return true;
+}
+bool isValidNodeName(const string &name) {
+    std::smatch matches;
+    string name_prefix = "\\s*([A-z\\[])";
+    string name_chars = "[A-z0-9;\\[\\]]";
+    std::regex node_regex("(" + name_prefix + name_chars + "*)\\s*");
+    if (not std::regex_search(name, matches, node_regex)) {
+        return false;
+    }
+
+    return areBracesBalanced(name, true);
 }
 
 void sanitizeGraphLiteralToken(string &token) {
