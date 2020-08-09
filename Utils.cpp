@@ -10,12 +10,14 @@ using std::string;
 using std::vector;
 
 namespace GraphCalc {
+string node_name_chars_regex_str = "[A-z0-9;\\[\\]]";
+string node_regex_str = "(" + node_name_chars_regex_str + "+)";
+
 string extractGraphLiteralToken(const string &subline) {
     std::smatch matches;
-    string name_prefix = "\\s*([A-z\\[])";
-    string name_chars = "[A-z0-9;\\[\\]]";
-    string node_regex = "(" + name_prefix + name_chars + "*)\\s*";
+    string node_regex = "\\s*" + node_regex_str + "\\s*";
     string edge_regex = "\\s*<" + node_regex + "," + node_regex + ">\\s*";
+
     std::regex regexp("^\\{\\s*((" + node_regex + ",)*" + node_regex +
                       ")?(\\|(" + edge_regex + "(," + edge_regex +
                       ")*)?)?\\s*\\}");
@@ -27,6 +29,7 @@ string extractGraphLiteralToken(const string &subline) {
 }
 bool areBracesBalanced(const string &line, bool is_node_name, FuncStage stage) {
     vector<char> stack;
+    size_t func_start_stack_height = 0;
     for (unsigned int i = 0; i < line.length(); i++) {
         if (not is_node_name and stage == NONE and
             std::count(stack.begin(), stack.end(), '{') == 0) {
@@ -37,8 +40,10 @@ bool areBracesBalanced(const string &line, bool is_node_name, FuncStage stage) {
                 }
                 if (line.find("save") == i) {
                     stage = PRE_SAVE_OPEN;
+                    func_start_stack_height = stack.size();
                 } else {
                     stage = PRE_LOAD_OPEN;
+                    func_start_stack_height = stack.size();
                 }
                 i += 3;
                 continue;
@@ -96,7 +101,11 @@ bool areBracesBalanced(const string &line, bool is_node_name, FuncStage stage) {
             case ' ':
                 break;
             default:
-                if (line[i] == ',' and stage == SAVE_FIRST_ARG) {
+                // If a comma found on the same level (braces wise) as the
+                // function openning "("
+                if (line[i] == ',' and stage == SAVE_FIRST_ARG and
+                    stack.size() == (func_start_stack_height + 1) and
+                    stack.back() == '(') {
                     stage = MID_FILENAME;
                     break;
                 }
@@ -125,9 +134,7 @@ bool isValidGraphName(const string &name) {
 }
 bool isValidNodeName(const string &name) {
     std::smatch matches;
-    string name_prefix = "\\s*([A-z\\[])";
-    string name_chars = "[A-z0-9;\\[\\]]";
-    std::regex node_regex("(" + name_prefix + name_chars + "*)\\s*");
+    std::regex node_regex(node_regex_str);
     if (not std::regex_search(name, matches, node_regex)) {
         return false;
     }
