@@ -129,7 +129,7 @@ shared_ptr<BinTree> parseLine(string line) {
             }
             curr_tree = tree_stack.back().first;
             tree_stack.pop_back();
-            if (tree_stack.back().second != "") {
+            if (tree_stack.size() > 0 and tree_stack.back().second != "") {
                 curr_tree = tree_stack.back().first;
                 tree_stack.pop_back();
             }
