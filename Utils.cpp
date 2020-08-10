@@ -134,7 +134,7 @@ bool isValidGraphName(const string &name) {
 }
 bool isValidNodeName(const string &name) {
     std::smatch matches;
-    std::regex node_regex(node_regex_str);
+    std::regex node_regex("^" + node_regex_str + "$");
     if (not std::regex_search(name, matches, node_regex)) {
         return false;
     }
