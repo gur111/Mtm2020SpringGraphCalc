@@ -93,6 +93,8 @@ INSTANTIATE_TEST_CASE_P(
                                 "../mtm_final_test/stav_out.txt"},
                     files_state{"Shir", "../mtm_final_test/shir_in.txt",
                                 "../mtm_final_test/shir_out.txt"},
+                    files_state{"Mohammad", "../mtm_final_test/moh_in.txt",
+                                "../mtm_final_test/moh_out.txt"},
                     files_state{"2_5_1", "../Tests/2.2&2.5/batch/t1in.txt",
                                 "../Tests/2.2&2.5/batch/t1out.txt"},
                     files_state{"2_5_2", "../Tests/2.2&2.5/batch/t2in.txt",
