@@ -241,8 +241,7 @@ std::shared_ptr<Graph> Graph::loadFromFile(std::string filename) {
     infile.open(filename, std::ios_base::binary | std::ifstream::in);
     if (not infile.is_open() || infile.bad() || infile.fail()) {
         // Naughty bad
-        throw Unknown("Failed to open file " + filename + ". " +
-                      strerror(errno));
+        throw Unknown("Failed to open file " + filename + ". ");
     }
     infile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
     unsigned int node_count, edge_count;
@@ -284,8 +283,7 @@ void Graph::saveToFile(std::string filename) const {
     outfile.open(filename, std::ios_base::binary);
     if (not outfile.is_open() || outfile.bad() || outfile.fail()) {
         // Naughty bad
-        throw Unknown("Save to file " + filename + " failed. " +
-                      strerror(errno) + ". Probably the path is invalid.");
+        throw Unknown("Save to file " + filename + " failed. Probably the path is invalid.");
     }
     outfile.exceptions(std::ofstream::failbit | std::ofstream::badbit);
     // Node count
