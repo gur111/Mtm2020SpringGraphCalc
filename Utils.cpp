@@ -159,12 +159,12 @@ string trim(const string &token) {
 string extractFuncParams(string command, bool start_to_end) {
     std::smatch matches;
     string base_exp = "[A-z]*\\s*\\(.*\\)\\s*";
-    std::regex match_func_format(start_to_end ? ("^" + base_exp + "$")
+    std::regex match_func_format(start_to_end ? ("^\\s*" + base_exp + "\\s*$")
                                               : base_exp);
     if (std::regex_search(command, matches, match_func_format)) {
         int spos = command.find("("), epos = command.rfind(")");
         string result = command.substr(spos + 1, epos - spos - 1);
-        return result;
+        return trim(result);
     }
     // Format mismatch
     throw SyntaxError("Function call is in an invalid format");
