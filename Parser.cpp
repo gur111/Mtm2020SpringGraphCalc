@@ -33,6 +33,7 @@ shared_ptr<BinTree> parseLine(string line) {
     tree_stack.push_back(pairBO(curr_tree, ""));
     string token;
     shared_ptr<TokenType> type(new TokenType());
+    bool was_last_graph = false;
 
     if (not areBracesBalanced(line)) {
         throw SyntaxError("Braces unbalanced.");
@@ -129,6 +130,7 @@ shared_ptr<BinTree> parseLine(string line) {
             curr_tree = tree_stack.back().first;
             tree_stack.pop_back();
         } else if (BIN_OPERATORS.find(token) != BIN_OPERATORS.end()) {
+            was_last_graph = false;
             // Handle binary operators
             curr_tree->set(token);
             curr_tree = curr_tree->createRight("");
@@ -140,9 +142,15 @@ shared_ptr<BinTree> parseLine(string line) {
         } else if (*type == TokenType::GRAPH_LITERAL or
                    *type == TokenType::GRAPH_NAME or
                    *type == TokenType::FUNCTION_NAME) {
+            if (was_last_graph) {
+                throw SyntaxError("Missing operand between tokens.");
+            }
+            was_last_graph = true;
             string tmp_token = getNextToken("", true);
+            // Check if the next token is a binary operator
             if (tmp_token != "" and tree_stack.back().second == "" and
                 BIN_OPERATORS.find(tmp_token) != BIN_OPERATORS.end()) {
+                    was_last_graph = false;
                 curr_tree->set(tmp_token);
                 if (*type == TokenType::FUNCTION_NAME) {
                     curr_tree->createLeft("load")->createLeft(

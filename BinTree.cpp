@@ -88,7 +88,7 @@ void GraphCalc::BinTree::cleanup() {
             side = left;
         } else {
             if (left == nullptr and right == nullptr) {
-                throw Unknown("Unknown error. Likely empty braces.");
+                throw Unknown("Likely empty braces.");
             } else {
                 throw SyntaxError("Expected operator between operands.");
             }
