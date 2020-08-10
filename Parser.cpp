@@ -129,6 +129,10 @@ shared_ptr<BinTree> parseLine(string line) {
             }
             curr_tree = tree_stack.back().first;
             tree_stack.pop_back();
+            if (tree_stack.back().second != "") {
+                curr_tree = tree_stack.back().first;
+                tree_stack.pop_back();
+            }
         } else if (BIN_OPERATORS.find(token) != BIN_OPERATORS.end()) {
             was_last_graph = false;
             // Handle binary operators
@@ -150,7 +154,7 @@ shared_ptr<BinTree> parseLine(string line) {
             // Check if the next token is a binary operator
             if (tmp_token != "" and tree_stack.back().second == "" and
                 BIN_OPERATORS.find(tmp_token) != BIN_OPERATORS.end()) {
-                    was_last_graph = false;
+                was_last_graph = false;
                 curr_tree->set(tmp_token);
                 if (*type == TokenType::FUNCTION_NAME) {
                     curr_tree->createLeft("load")->createLeft(
