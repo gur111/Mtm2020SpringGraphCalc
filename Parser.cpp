@@ -2,6 +2,7 @@
 
 #include <cctype>
 #include <iostream>
+#include <regex>
 #include <set>
 #include <string>
 #include <utility>
@@ -195,8 +196,29 @@ string addBraces(string line) {
     vector<char> braces_stack;
     int braces_count = -1;
     size_t braces_pos = 0;
+    vector<pair<size_t, int>> load_ranges;
+
+    {  // Mark loads for skipping
+        std::regex pattern("(load\\s*\\([^\\)\\(]*\\))");
+
+        std::sregex_iterator t(line.begin(), line.end(), pattern);
+        auto line_end = std::sregex_iterator();
+
+        while (t != line_end) {
+            load_ranges.push_back(
+                pair<size_t, int>(t->position(), (*t)[0].length()));
+            ++t;
+        }
+    }
 
     for (size_t i = 0; i < line.length(); i++) {
+        // Skip load ranges
+        if (load_ranges.size() > 0 and i == load_ranges[0].first) {
+            i += load_ranges[0].second - 1;
+            load_ranges.erase(load_ranges.begin());
+            continue;
+        }
+
         // TODO: Ignore operators while mid filename
         if (line[i] == '(') {
             size_t startpos = i;
@@ -234,15 +256,16 @@ string addBraces(string line) {
                 // Now we need to advance i to skip the closing brace
                 i++;
             }
-        } else if (line.find("load") == i and
-                   // and not in curly braces
-                   line.substr(0, i).find_last_of('{') >
-                       line.substr(0, i).find_last_of('}')) {
-            if ((i = line.find(")")) == string::npos) {
-                throw SyntaxError(
-                    "Got weird after load. Expecting \")\" somewhere.");
-            }
         }
+        // else if (line.find("load") == i and
+        //            // and not in curly braces
+        //            line.substr(0, i).find_last_of('{') >
+        //                line.substr(0, i).find_last_of('}')) {
+        //     if ((i = line.find(")")) == string::npos) {
+        //         throw SyntaxError(
+        //             "Got weird after load. Expecting \")\" somewhere.");
+        //     }
+        // }
     }
     return line.substr(0, braces_pos) +
            string(braces_count > 0 ? braces_count : 0, '(') +
