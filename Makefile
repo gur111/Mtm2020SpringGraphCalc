@@ -2,7 +2,7 @@
 CXX=g++
 SERVER_PYTHON=/usr/local/include/python3.6m
 LOCAL_PYTHON=/usr/include/python3.8
-PYTHON_INCLUDE=$(SERVER_PYTHON)
+PYTHON_INCLUDE=$(LOCAL_PYTHON)
 
 
 $(shell mkdir -p bin)
@@ -70,14 +70,21 @@ $(GRAPH_SWIG): GraphSwig.h GraphSwig.cpp $(GRAPH)
 	
 
 libgraph.a: $(EXCEPTIONS) $(GRAPH) $(UTILS) 
-	ar -rs $(BIN_DIR)/$@ $(addprefix $(BIN_DIR)/, $^)
+	ar -rs $@ $(addprefix $(BIN_DIR)/, $^)
 
 swig: libgraph.a $(GRAPH_SWIG)
-	swig -c++ -python -outdir $(BIN_DIR) -o Graph_wrap.cxx Graph.i
-	$(CXX) $(COMP_FLAGS) Graph_wrap.cxx $(BIN_DIR)/$(EXCEPTIONS) $(BIN_DIR)/$(GRAPH) $(BIN_DIR)/$(UTILS) $(BIN_DIR)/$(GRAPH_SWIG) \
-    -I$(PYTHON_INCLUDE) -fPIC -shared -o $(BIN_DIR)/_Graph.so
+	swig -c++ -python -outdir $(BIN_DIR) -o graph_wrap.cxx graph.i
+	$(CXX) $(COMP_FLAGS) graph_wrap.cxx $(BIN_DIR)/$(EXCEPTIONS) $(BIN_DIR)/$(GRAPH) $(BIN_DIR)/$(UTILS) $(BIN_DIR)/$(GRAPH_SWIG) \
+    -I$(PYTHON_INCLUDE) -fPIC -shared -o $(BIN_DIR)/_graph.so
+
+tar:
+	cp mtm_final_test/gur_input.txt ./test_in.txt
+	cp mtm_final_test/gur_output.txt ./test_out.txt
+	zip gcalc.zip graph.i design.pdf Makefile test_in.txt test_out.txt *.cpp *.h
+	rm ./test_in.txt ./test_out.txt
+
 
 clean:
 	rm -rf $(BIN_DIR) $(PROG)
-	rm gcalc
-	rm Graph_wrap.cxx
+	rm -f gcalc
+	rm -f graph_wrap.cxx
