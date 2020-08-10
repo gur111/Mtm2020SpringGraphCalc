@@ -1,0 +1,100 @@
+k1={x}^{y}+!{x,y}*{1}
+print({2x,y}+{2x,y}-{2x,y})
+print(k1)
+reset
+print({x}^{y}+!{x,y}*{1})
+save({a,c},a+-bc+d+2.ef)
+g0=load(a+-bc+d+2.ef)
+print(g0)
+print(load(bu))
+g0={ |}
+g0={| }
+g0={|}
+g0={}
+inv={x,y,z|<x,x>}
+inv={x,y,z,z|}
+inv={|} blah
+inv={|}blah
+inv=(g0
+inv=)g0
+quit={}
+save={}
+inv={||}
+who
+print(g0)
+print(inv)
+print({[rest]load, save[booo]})
+g1 = !({x,y,z|<x,y>}-{z})
+g1 = !({x y,y,z|<x,y>}-{z})
+  who
+  print  ( g1   )     
+inv = save(g1, mygraph)
+save(g1, ../g1.cg)
+save(g1,quit)
+g2 = !{y,z|}
+g3= !{x,z|<x,      z>}
+g4= ! !!g3
+print(g3)
+print(g4)
+g5= {z}
+g6 =!{x,,y,z}
+g6 =!{x , y,z,          }
+g6 =!{x , y,<z,y>          }
+g6 =!{x,y,z}
+in valid = {a,y,x}
+    who
+      who     pokemon
+loadload ={} +g2 + g3 + !( g4*(  (g6 -g5+ g2))-g4*g5)
+  print    ( (loadload ) )
+inv = g2 + g3 + (g4*((g5-g6))--g6)
+print ( inv)
+inv = g2 + g3 + (g4*((G5-G6)-)-g6)
+g7 = load ( quit )
+print(g7)
+                  save (quit, filename)
+save(inv, filename)
+save(g7, ../badpath/graphnt)
+(g8)=!g1
+print(g2_
+print(g2_)
+save(g7, "graphnt"  )
+save(g7,     "in/valid"   )
+save(g7, ../with spa ce )
+save(g7, (invBraces) )  
+ save({}), (invBraces )
+save(g7, ope+rator.cg)  
+save(g7, emb]race.cg)   
+save(g2, load[save?_them!all  )  
+print(g7)
+print(load("graphnt"))
+print(load(withspace))
+print(load(../with spa ce))
+print(load(emb]race.cg))
+print(load(ope+rator.cg))
+print(load(load[save?_them!all))
+wh o
+print(g7+g7-g7)
+print(load(ope+rator.cg)+load(emb]race.cg)-load(../with spa ce))
+(g8=!g1)
+print(load(   quit   ))
+g8={ab,c|<a,c>}
+g8={[a, b]}
+g8={a;b,[ab]}
+g8={a+b,[ab]}
+g8=!{[a],[b],[c;]}
+g9 = {1,2,3}
+k1 = {sup,98j+|}
+print(k)
+print(g8)
+    delete    (  g2  )        
+print(g2) 
+  inv =  {error} {graph}
+  inv =  ({error}) {graph}
+  inv =  ({error}{graph})
+print(!{x,y}+{z})
+print(!({x,y}+{z}))
+print({x,y}+!({z}))
+Print({x})
+k2 = {x,z,a,b,c,d,e, 1,2,3,4,5,6,7,8,9,0,10,11,12,123,13,14,15,16,178,18,198,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33} + {z,y}
+print(k2)
+inv = {x,z,a} + {z,y} + ({}+) +

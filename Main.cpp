@@ -14,9 +14,13 @@ int main(int argc, char *argv[]) {
         ifstream infile;
         ofstream outfile;
         std::streambuf *cout_bu;
-        infile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
         outfile.exceptions(std::ofstream::failbit | std::ofstream::badbit);
         infile.open(argv[1], std::ios_base::binary);
+        if(not infile.is_open() || infile.bad() || infile.fail()){
+            cout << "Failed to open input file for batch mode." << endl;
+            return 1;
+        }
+        infile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
         outfile.open(argv[2], std::ios_base::binary);
         // Redirect cout to output file
         cout_bu = std::cout.rdbuf();
