@@ -117,6 +117,9 @@ void BinTree::print2DUtil(ostream &os, const shared_ptr<BinTree> root,
     // count
     cout << endl;
     for (int i = TREE_PRINT_SPREAD; i < space; i++) cout << " ";
+    if (root->value == "") {
+        cout << "NV" << endl;
+    }
     cout << root->value << endl;
 
     // Process left child
