@@ -69,14 +69,14 @@ shared_ptr<BinTree> parseLine(string line) {
     } else if (tmp_token == "save") {
         curr_tree->set(tmp_token);
         tree_stack.pop_back();
-        string first_param =
+        string func_args =
             extractFuncParams(line) + ")";  // Must have ")" to detect filename
 
-        size_t comma_pos = first_param.rfind(",");
+        size_t comma_pos = func_args.rfind(",");
         if (comma_pos == string::npos) {
             throw SyntaxError("Missing comma.");
         }
-        getNextToken(first_param.substr(comma_pos + 1), false, false, type);
+        getNextToken(func_args.substr(comma_pos + 1), false, true, type);
         token = getNextToken("", false, true);
         if (token == "") {
             throw SyntaxError("Failed to detect filename.");
@@ -95,7 +95,7 @@ shared_ptr<BinTree> parseLine(string line) {
         tree_stack.push_back(pairBO(curr_tree->createLeft(""), ""));
         curr_tree = curr_tree->getLeft();
         // Add braces to avoid ambiguity
-        line = addBraces(first_param.substr(0, comma_pos));
+        line = addBraces(func_args.substr(0, comma_pos));
         getNextToken(line, false, false, type);
     } else if (tmp_token == "who" or tmp_token == "quit" or
                tmp_token == "reset") {
@@ -318,6 +318,8 @@ string getNextToken(const string &line, bool peak, bool expect_filename,
         int startpos = tmp_pos;
         if (cur_line[tmp_pos] == ')') {
             throw Missing("Missing filename.");
+        } else if (cur_line[tmp_pos] == ',' or cur_line[tmp_pos] == '(') {
+            throw SyntaxError("Filename cannot include commas or braces.");
         }
         while (cur_line[++tmp_pos] != ')') {
             if (cur_line[tmp_pos] == '\0') {
