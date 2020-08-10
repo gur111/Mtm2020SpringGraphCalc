@@ -106,7 +106,13 @@ INSTANTIATE_TEST_CASE_P(
                     files_state{"2_3_2", "../Tests/2.3/t2in.txt",
                                 "../Tests/2.3/t2out.txt"},
                     files_state{"2_3_3", "../Tests/2.3/t3in.txt",
-                                "../Tests/2.3/t3out.txt"}),
+                                "../Tests/2.3/t3out.txt"},
+                    files_state{"2_4_1", "../Tests/4.4/test1.out",
+                                "../Tests/4.4/test1.py"},
+                    files_state{"2_4_2", "../Tests/4.4/test2.out",
+                                "../Tests/4.4/test2.py"},
+                    files_state{"2_4_3", "../Tests/4.4/test3.out",
+                                "../Tests/4.4/test3.py"}),
     FullCalcInputFileTest::PrintToStringParamName());
 
 TEST(FullCalcValid, BasicLiteralRead) {
