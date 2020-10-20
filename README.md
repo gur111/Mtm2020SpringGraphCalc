@@ -1,5 +1,5 @@
 # Grade
-The project got 87. Most points (9) were lost due to performance issues (w/ the regex library).
+The project got 87. Most points (9) were lost due to performance issues (w/ the regex library itself).
 
 Structure
 ========
